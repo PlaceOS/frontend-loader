@@ -1,6 +1,6 @@
 require "./helper"
 
-module PlaceOS::Frontends::Api
+module PlaceOS::FrontendLoader::Api
   describe Root do
     with_server do
       it "health checks" do
@@ -11,7 +11,7 @@ module PlaceOS::Frontends::Api
       it "should check version" do
         result = curl("GET", "/api/frontends/v1/version")
         result.status_code.should eq 200
-        PlaceOS::Model::Version.from_json(result.body).service.should eq "frontends"
+        PlaceOS::Model::Version.from_json(result.body).service.should eq "frontend-loader"
       end
     end
   end

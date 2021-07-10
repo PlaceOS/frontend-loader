@@ -1,6 +1,6 @@
 require "./helper"
 
-module PlaceOS::Frontends::Api
+module PlaceOS::FrontendLoader::Api
   describe Repositories do
     it "lists commits for a loaded repository" do
       repository = example_repository

@@ -3,7 +3,7 @@ require "placeos-compiler/git"
 require "./base"
 require "../loader"
 
-module PlaceOS::Frontends::Api
+module PlaceOS::FrontendLoader::Api
   class Repositories < Base
     base "/api/frontends/v1/repositories"
     Log = ::Log.for(self)

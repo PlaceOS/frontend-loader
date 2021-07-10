@@ -1,4 +1,4 @@
-module PlaceOS::Frontends
+module PlaceOS::FrontendLoader
   class Error < Exception
     getter message
 
