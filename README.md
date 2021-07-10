@@ -1,4 +1,4 @@
-# PlaceOS Frontends Service
+# PlaceOS Frontend Loader
 
 [![Build Dev Image](https://github.com/PlaceOS/frontends/actions/workflows/build-dev-image.yml/badge.svg)](https://github.com/PlaceOS/frontends/actions/workflows/build-dev-image.yml)
 [![CI](https://github.com/PlaceOS/frontends/actions/workflows/ci.yml/badge.svg)](https://github.com/PlaceOS/frontends/actions/workflows/ci.yml)
@@ -24,7 +24,7 @@ Included in this repo is an alpine based Dockerfile.
 Included is a simple client that can be configured via the `PLACE_LOADER_URI` environment variable.
 
 ```crystal
-require "frontends/client"
+require "placeos-frontend-loader/client"
 
 # One-shot
 commits = PlaceOS::Frontends::Client.client do |client|

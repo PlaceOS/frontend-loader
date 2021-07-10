@@ -5,7 +5,7 @@ require "uri"
 
 require "./error"
 
-module PlaceOS::Frontends
+module PlaceOS::FrontendLoader
   class Client
     BASE_PATH   = "/api/frontends"
     API_VERSION = "v1"

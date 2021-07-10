@@ -1,7 +1,7 @@
 require "placeos-log-backend"
 require "file_utils"
 require "placeos-models/spec/generator"
-require "../src/placeos-frontends"
+require "../src/placeos-frontend-loader"
 require "../lib/action-controller/spec/curl_context"
 require "action-controller/server"
 
@@ -16,7 +16,7 @@ end
 
 Spec.after_suite { reset }
 
-PlaceOS::Frontends::Loader.configure &.content_directory=(TEST_DIR)
+PlaceOS::FrontendLoader::Loader.configure &.content_directory=(TEST_DIR)
 
 def reset
   FileUtils.rm_rf(TEST_DIR)

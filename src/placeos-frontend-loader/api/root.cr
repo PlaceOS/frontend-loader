@@ -2,7 +2,7 @@ require "./base"
 
 require "placeos-models/version"
 
-module PlaceOS::Frontends::Api
+module PlaceOS::FrontendLoader::Api
   class Root < Base
     base "/api/frontends/v1"
 

@@ -1,6 +1,6 @@
 require "./helper"
 
-module PlaceOS::Frontends
+module PlaceOS::FrontendLoader
   describe Loader do
     repository = example_repository
     expected_path = File.join(TEST_DIR, repository.folder_name)

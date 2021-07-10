@@ -5,7 +5,7 @@ require "placeos-models/repository"
 require "placeos-resource"
 require "tasker"
 
-module PlaceOS::Frontends
+module PlaceOS::FrontendLoader
   class Loader < Resource(Model::Repository)
     Log = ::Log.for(self)
 

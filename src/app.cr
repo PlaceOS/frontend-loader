@@ -3,8 +3,8 @@ require "option_parser"
 require "./constants"
 
 # Server defaults
-host = PlaceOS::Frontends::HOST
-port = PlaceOS::Frontends::PORT
+host = PlaceOS::FrontendLoader::HOST
+port = PlaceOS::FrontendLoader::PORT
 
 # Application configuration
 content_directory = nil
@@ -14,7 +14,7 @@ git_password = nil
 
 # Command line options
 OptionParser.parse(ARGV.dup) do |parser|
-  parser.banner = "Usage: #{PlaceOS::Frontends::APP_NAME} [arguments]"
+  parser.banner = "Usage: #{PlaceOS::FrontendLoader::APP_NAME} [arguments]"
 
   # Application flags
   parser.on("--www=CONTENT_DIR", "Specifies the content directory") { |d| content_directory = d }
@@ -31,7 +31,7 @@ OptionParser.parse(ARGV.dup) do |parser|
   end
 
   parser.on("-v", "--version", "Display the application version") do
-    puts "#{PlaceOS::Frontends::APP_NAME} v#{PlaceOS::Frontends::VERSION}"
+    puts "#{PlaceOS::FrontendLoader::APP_NAME} v#{PlaceOS::FrontendLoader::VERSION}"
     exit 0
   end
 
@@ -63,7 +63,7 @@ require "./config"
 
 # Configure the loader
 
-PlaceOS::Frontends::Loader.configure do |settings|
+PlaceOS::FrontendLoader::Loader.configure do |settings|
   content_directory.try { |cd| settings.content_directory = cd }
   update_crontab.try { |uc| settings.update_crontab = uc }
   git_username.try { |gu| settings.username = gu }
@@ -72,7 +72,7 @@ end
 
 # Start the loader
 
-PlaceOS::Frontends::Loader.instance.start
+PlaceOS::FrontendLoader::Loader.instance.start
 
 # Server Configuration
 
@@ -108,4 +108,4 @@ server.run do
 end
 
 # Shutdown message
-puts "#{PlaceOS::Frontends::APP_NAME} leaps through the veldt\n"
+puts "#{PlaceOS::FrontendLoader::APP_NAME} leaps through the veldt\n"
