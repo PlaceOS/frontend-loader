@@ -114,7 +114,7 @@ module PlaceOS::Frontends
       content_directory : String
     )
       username = repository.username || Loader.settings.username
-      password = repository.password || Loader.settings.password
+      password = repository.decrypt_password || Loader.settings.password
       repository_commit = repository.commit_hash
       content_directory = File.expand_path(content_directory)
       repository_directory = File.expand_path(File.join(content_directory, repository.folder_name))
