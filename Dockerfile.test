@@ -1,4 +1,5 @@
-FROM crystallang/crystal:1.0.0-alpine
+ARG CRYSTAL_VERSION=1.1.1
+FROM crystallang/crystal:${CRYSTAL_VERSION}-alpine
 
 WORKDIR /app
 
@@ -6,7 +7,7 @@ WORKDIR /app
 ARG PLACE_COMMIT="DEV"
 
 # Add trusted CAs for communicating with external services
-RUN apk add --no-cache ca-certificates tzdata bash
+RUN apk add --no-cache ca-certificates bash
 
 RUN update-ca-certificates
 
