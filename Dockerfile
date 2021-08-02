@@ -1,4 +1,6 @@
-FROM crystallang/crystal:1.0.0-alpine as builder
+ARG CRYSTAL_VERSION=1.1.1
+FROM crystallang/crystal:${CRYSTAL_VERSION}-alpine as builder
+
 ARG PLACE_COMMIT="DEV"
 ARG PLACE_VERSION="DEV"
 
@@ -20,7 +22,7 @@ RUN PLACE_COMMIT=$PLACE_COMMIT \
 FROM alpine:3.11
 WORKDIR /app
 
-RUN apk add --update --no-cache ca-certificates git openssh
+RUN apk upgrade && apk add --update --no-cache ca-certificates git openssh
 
 # Add trusted CAs for communicating with external services
 RUN update-ca-certificates

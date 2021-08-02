@@ -19,8 +19,8 @@ jobs:
       fail-fast: false
       matrix:
         crystal:
+          - 1.1.1
           - nightly
-          - 1.0.0
     steps:
       - uses: actions/checkout@v2
       - name: Run docker-compose test environment
