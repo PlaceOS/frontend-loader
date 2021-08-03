@@ -19,7 +19,7 @@ RUN PLACE_COMMIT=$PLACE_COMMIT \
     PLACE_VERSION=$PLACE_VERSION \
     crystal build --static --release --no-debug --error-trace -o bin/frontends src/app.cr
 
-FROM alpine:3.11
+FROM alpine:3.14
 WORKDIR /app
 
 RUN apk upgrade && apk add --update --no-cache ca-certificates git openssh
