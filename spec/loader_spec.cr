@@ -20,8 +20,6 @@ module PlaceOS::FrontendLoader
 
     describe "updating credentials" do
       it "does not create an update cycle" do
-        Model::Repository.clear
-
         old_token = "fake_password"
         new_token = "fake_password_electric_boogaloo"
 
@@ -46,6 +44,7 @@ module PlaceOS::FrontendLoader
         loader = Loader.new
 
         loader.process_resource(:created, repo).success?.should be_true
+        repo.reload!
         repo.password = new_token
         repo.save!
 
