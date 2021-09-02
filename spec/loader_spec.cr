@@ -1,4 +1,5 @@
 require "./helper"
+require "rethinkdb"
 
 module PlaceOS::FrontendLoader
   describe Loader do
@@ -16,6 +17,43 @@ module PlaceOS::FrontendLoader
       Dir.exists?(File.join(TEST_DIR, "login")).should be_true
 
       loader.stop
+    end
+
+    describe "updating credentials" do
+      it "does not create an update cycle" do
+        Model::Repository.clear
+
+        old_token = "fake_password"
+        new_token = "fake_password_electric_boogaloo"
+
+        changes = [] of RethinkORM::Changefeed::Change(PlaceOS::Model::Repository)
+        repo = PlaceOS::Model::Generator.repository(type: :interface).tap do |r|
+          r.uri = "https://github.com/PlaceOS/private-drivers"
+          r.name = "drivers"
+          r.folder_name = UUID.random.to_s
+          r.username = "robot@place.tech"
+          r.commit_hash = "7c47ed0e2d59471a1617c21f3629c682d5aefb18"
+          r.password = old_token
+        end.save!
+
+        spawn do
+          Model::Repository.changes.each do |change|
+            changes << change
+          end
+        end
+
+        loader = Loader.new
+
+        loader.process_resource(:created, repo).success?.should be_true
+        repo.password = new_token
+        repo.save!
+
+        repo.password_will_change!
+        loader.process_resource(:updated, repo).success?.should be_true
+
+        sleep 10.seconds
+        changes.size.should eq 1
+      end
     end
 
     context "processing Repository" do
