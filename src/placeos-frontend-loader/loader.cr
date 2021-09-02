@@ -143,20 +143,20 @@ module PlaceOS::FrontendLoader
       # Grab commit for the cloned/pulled repository
       checked_out_commit = Git.current_repository_commit(repository.folder_name, content_directory)
 
-      # Update model commit if the repository is not held at HEAD
-      unless checked_out_commit == repository_commit
-        if repository_commit != "HEAD"
-          Log.info { {
-            message:           "updating commit on Repository document",
-            current_commit:    checked_out_commit,
-            repository_commit: repository_commit,
-            folder_name:       repository.folder_name,
-          } }
+      # Update model commit iff...
+      # - the repository is not held at HEAD
+      # - the commit has changed
+      unless repository_commit.starts_with?(checked_out_commit) || repository_commit == "HEAD"
+        Log.info { {
+          message:           "updating commit on Repository document",
+          current_commit:    checked_out_commit,
+          repository_commit: repository_commit,
+          folder_name:       repository.folder_name,
+        } }
 
-          # Refresh the repository's `commit_hash`
-          repository_commit = checked_out_commit
-          repository.commit_hash = checked_out_commit
-        end
+        # Refresh the repository's `commit_hash`
+        repository_commit = checked_out_commit
+        repository.commit_hash = checked_out_commit
         repository.update
       end
 

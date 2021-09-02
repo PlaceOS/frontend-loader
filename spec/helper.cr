@@ -10,7 +10,7 @@ require "spec"
 TEST_DIR = "test-www"
 
 Spec.before_suite do
-  Log.builder.bind "*", Log::Severity::Debug, PlaceOS::LogBackend.log_backend
+  Log.builder.bind "*", :trace, PlaceOS::LogBackend.log_backend
   reset
 end
 
@@ -35,7 +35,7 @@ def example_repository(
 
     existing
   else
-    repository = PlaceOS::Model::Generator.repository(type: PlaceOS::Model::Repository::Type::Interface)
+    repository = PlaceOS::Model::Generator.repository(type: :interface)
     repository.uri = uri
     repository.name = "Backoffice"
     repository.folder_name = "backoffice"
