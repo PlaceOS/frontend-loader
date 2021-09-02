@@ -1,5 +1,4 @@
 require "./helper"
-require "rethinkdb"
 
 module PlaceOS::FrontendLoader
   describe Loader do
@@ -41,6 +40,8 @@ module PlaceOS::FrontendLoader
             changes << change
           end
         end
+
+        Fiber.yield
 
         loader = Loader.new
 
