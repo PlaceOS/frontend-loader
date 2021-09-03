@@ -1,5 +1,5 @@
 name: placeos-frontend-loader
-version: 1.0.0
+version: 1.0.1
 crystal: ">= 1.0.0"
 license: MIT
 authors:
@@ -16,7 +16,7 @@ dependencies:
 
   placeos-compiler:
     github: placeos/compiler
-    version: ~> 4.0
+    version: ~> 4.6
 
   placeos-models:
     github: placeos/models

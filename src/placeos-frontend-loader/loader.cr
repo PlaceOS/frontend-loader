@@ -146,7 +146,7 @@ module PlaceOS::FrontendLoader
       # Update model commit iff...
       # - the repository is not held at HEAD
       # - the commit has changed
-      unless repository_commit.starts_with?(checked_out_commit) || repository_commit == "HEAD"
+      unless checked_out_commit.starts_with?(repository_commit) || repository_commit == "HEAD"
         Log.info { {
           message:           "updating commit on Repository document",
           current_commit:    checked_out_commit,
