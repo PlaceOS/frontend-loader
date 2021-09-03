@@ -4,7 +4,7 @@ require "placeos-models/version"
 
 module PlaceOS::FrontendLoader::Api
   class Root < Base
-    base "/api/frontends/v1"
+    base "/api/frontend-loader/v1"
 
     get "/", :root do
       head :ok

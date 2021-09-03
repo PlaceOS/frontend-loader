@@ -7,7 +7,7 @@ require "./error"
 
 module PlaceOS::FrontendLoader
   class Client
-    BASE_PATH   = "/api/frontends"
+    BASE_PATH   = "/api/frontend-loader"
     API_VERSION = "v1"
     DEFAULT_URI = URI.parse(ENV["PLACE_LOADER_URI"]? || "http://127.0.0.1:3000")
     getter api_version : String
