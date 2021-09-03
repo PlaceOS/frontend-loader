@@ -5,7 +5,7 @@ require "../loader"
 
 module PlaceOS::FrontendLoader::Api
   class Repositories < Base
-    base "/api/frontends/v1/repositories"
+    base "/api/frontend-loader/v1/repositories"
     Log = ::Log.for(self)
 
     # :nodoc:
