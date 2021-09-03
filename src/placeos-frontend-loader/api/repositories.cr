@@ -17,9 +17,10 @@ module PlaceOS::FrontendLoader::Api
 
     # Returns an array of commits for a repository
     get "/:folder_name/commits", :commits do
+      branch = params["branch"]?.presence || "master"
       count = (params["count"]? || 50).to_i
       folder_name = params["folder_name"]
-      commits = Git.repository_commits(folder_name, loader.content_directory, count) rescue nil
+      commits = Git.repository_commits(folder_name, loader.content_directory, count, branch) rescue nil
       head :not_found if commits.nil?
 
       render json: commits

@@ -44,11 +44,11 @@ module PlaceOS::FrontendLoader
     end
 
     # Commits for a frontend folder
-    def commits(folder_name : String, count : Int32? = nil)
-      path = "/repositories/#{folder_name}/commits"
-      path += "?count=#{count}" unless count.nil?
+    def commits(folder_name : String, branch : String, count : Int32? = nil)
+      params = HTTP::Params{"branch" => branch}
+      params["count"] = count unless count.nil?
+      path = "/repositories/#{folder_name}/commits?#{params}"
       response = get(path)
-
       Array(NamedTuple(commit: String, date: String, author: String, subject: String)).from_json(response.body)
     end
 
