@@ -31,5 +31,5 @@ COPY --from=builder /build/bin /app/bin
 
 # Run the app binding on port 3000
 EXPOSE 3000
-HEALTHCHECK CMD /app/bin/frontends -c http://localhost:3000/api/frontends/v1
+HEALTHCHECK CMD /app/bin/frontends -c http://localhost:3000/api/frontend-loader/v1
 CMD ["/app/bin/frontends", "-b", "0.0.0.0", "-p", "3000"]
