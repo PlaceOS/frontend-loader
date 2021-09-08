@@ -23,10 +23,10 @@ def reset
 end
 
 def example_repository(
-  uri : String = "https://github.com/placeos/backoffice",
+  uri : String = "https://github.com/placeos/compiler",
   branch : String = "master"
 )
-  existing = PlaceOS::Model::Repository.where(folder_name: "backoffice").first?
+  existing = PlaceOS::Model::Repository.where(folder_name: "test-repo").first?
   if existing
     unless existing.uri == uri && existing.branch == branch
       existing.uri = uri
@@ -37,8 +37,9 @@ def example_repository(
   else
     repository = PlaceOS::Model::Generator.repository(type: :interface)
     repository.uri = uri
-    repository.name = "Backoffice"
-    repository.folder_name = "backoffice"
+    repository.username = "robot@place.tech"
+    repository.name = "Test"
+    repository.folder_name = "test-repo"
     repository.branch = branch
     repository
   end

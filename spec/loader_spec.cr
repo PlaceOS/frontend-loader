@@ -26,11 +26,12 @@ module PlaceOS::FrontendLoader
 
         changes = [] of RethinkORM::Changefeed::Change(PlaceOS::Model::Repository)
         repo = PlaceOS::Model::Generator.repository(type: :interface).tap do |r|
-          r.uri = "https://github.com/PlaceOS/private-drivers"
-          r.name = "drivers"
+          r.name = "compiler"
+          r.uri = "https://github.com/placeos/compiler"
+          r.username = "robot@place.tech"
           r.folder_name = UUID.random.to_s
           r.username = "robot@place.tech"
-          r.commit_hash = "7c47ed0e2d59471a1617c21f3629c682d5aefb18"
+          r.commit_hash = "f7c6d8fb810c2be78722249e06bbfbda3d30d355"
           r.password = old_token
         end.save!
 
@@ -77,11 +78,11 @@ module PlaceOS::FrontendLoader
       end
     end
 
-    it "supports changing a uri" do
+    it "supports changing a uri", focus: true do
+      expected_uri = "https://github.com/place-labs/private-drivers"
+      repository.username= "robot@place.tech"
+
       loader = Loader.new
-
-      expected_uri = "https://github.com/place-labs/backoffice-alpha"
-
       loader.process_resource(:created, repository).success?.should be_true
       Dir.exists?(expected_path).should be_true
 
@@ -91,8 +92,8 @@ module PlaceOS::FrontendLoader
 
       Dir.exists?(expected_path).should be_true
 
-      url = ExecFrom.exec_from(expected_path, "git", {"remote", "get-url", "origin"}).output.to_s
-      url.strip.should end_with("backoffice-alpha")
+      url = Compiler::Git.run_git(expected_path, {"remote", "get-url", "origin"}).output.to_s
+      url.strip.should end_with("private-drivers")
     end
 
     describe "branches" do
@@ -127,7 +128,7 @@ module PlaceOS::FrontendLoader
       it "loads a specific branch" do
         loader = Loader.new
 
-        branch = "build-alpha"
+        branch = "test-fixture"
         repository.branch = branch
 
         loader.process_resource(:created, repository).success?.should be_true
@@ -137,7 +138,7 @@ module PlaceOS::FrontendLoader
       it "switches branches" do
         loader = Loader.new
 
-        branch = "build-alpha"
+        branch = "test-fixture"
         updated_branch = "master"
 
         repository.branch = branch
