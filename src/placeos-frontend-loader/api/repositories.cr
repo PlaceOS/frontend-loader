@@ -20,19 +20,38 @@ module PlaceOS::FrontendLoader::Api
       branch = params["branch"]?.presence || "master"
       count = (params["count"]? || 50).to_i
       folder_name = params["folder_name"]
-      commits = Git.repository_commits(folder_name, loader.content_directory, count, branch) rescue nil
-      head :not_found if commits.nil?
+      Log.context.set(branch: branch, count: count, folder: folder_name)
+      commits = Repositories.commits(folder_name, branch, count)
 
-      render json: commits
+      commits.nil? ? head :not_found : render json: commits
+    end
+
+    def self.commits(folder : String, branch : String, count : Int32 = 50, loader : Loader = Loader.instance)
+      Git.repository_commits(
+        repository: folder,
+        working_directory: loader.content_directory,
+        count: count, branch: branch
+      )
+    rescue e
+      Log.error(exception: e) { "failed to fetch commmits" }
+      nil
     end
 
     # Returns an array of branches for a repository
     get "/:folder_name/branches", :branches do
       folder_name = params["folder_name"]
-      branches = Git.branches(folder_name, loader.content_directory) rescue nil
-      head :not_found if branches.nil?
+      Log.context.set(folder: folder_name)
 
-      render json: branches
+      branches = Repositories.branches(folder_name)
+
+      branches.nil? ? head :not_found : render json: branches
+    end
+
+    def self.branches(folder, loader : Loader = Loader.instance)
+      Git.branches(folder, loader.content_directory)
+    rescue e
+      Log.error(exception: e) { "failed to fetch branches" }
+      nil
     end
 
     # Returns a hash of folder name to commits
