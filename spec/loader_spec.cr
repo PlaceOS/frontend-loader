@@ -41,8 +41,6 @@ module PlaceOS::FrontendLoader
           end
         end
 
-        Fiber.yield
-
         loader = Loader.new
 
         loader.process_resource(:created, repo).success?.should be_true
@@ -54,7 +52,7 @@ module PlaceOS::FrontendLoader
         loader.process_resource(:updated, repo).success?.should be_true
 
         sleep 10.seconds
-        changes.size.should eq 1
+        changes.size.should eq 2
       end
     end
 
@@ -78,8 +76,8 @@ module PlaceOS::FrontendLoader
       end
     end
 
-    it "supports changing a uri", focus: true do
-      expected_uri = "https://github.com/place-labs/private-drivers"
+    it "supports changing a uri" do
+      expected_uri = "https://github.com/placeOS/private-drivers"
       repository.username= "robot@place.tech"
 
       loader = Loader.new
@@ -98,8 +96,8 @@ module PlaceOS::FrontendLoader
 
     describe "branches" do
       it "is unaffected by queries" do
-        checked_out_commit = "f7c6d8fb810c2be78722249e06bbfbda3d30d355"
         branch = "test-fixture"
+        checked_out_commit = "d37c34a49c96a2559408468b2b9458867cbf1329"
         folder = UUID.random.to_s
         repo = PlaceOS::Model::Generator.repository(type: :interface).tap do |r|
           r.name = "compiler"
@@ -117,12 +115,14 @@ module PlaceOS::FrontendLoader
 
         Dir.exists?(expected_path).should be_true
         Compiler::Git.current_branch(expected_path).should eq branch
+        Compiler::Git.current_repository_commit(folder, loader.content_directory).should eq checked_out_commit
 
         Api::Repositories.branches(folder, loader)
         Api::Repositories.commits(folder, branch, loader: loader).not_nil!.should_not be_empty
         Api::Repositories.commits(folder, "master", loader: loader).not_nil!.should_not be_empty
+        Api::Repositories.commits(folder, branch, loader: loader).not_nil!.should_not be_empty
 
-        Compiler::Git.current_branch(expected_path).should eq branch
+        Compiler::Git.current_repository_commit(folder, loader.content_directory).should eq checked_out_commit
       end
 
       it "loads a specific branch" do
