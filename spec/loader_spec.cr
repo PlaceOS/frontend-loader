@@ -52,7 +52,7 @@ module PlaceOS::FrontendLoader
         loader.process_resource(:updated, repo).success?.should be_true
 
         sleep 10.seconds
-        changes.size.should eq 2
+        changes.size.should eq 1
       end
     end
 
