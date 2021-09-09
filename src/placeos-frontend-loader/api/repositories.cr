@@ -92,8 +92,10 @@ module PlaceOS::FrontendLoader::Api
       key = Git.repository_lock(authoritative_path).read do
         remote = Git.remote(folder, loader.content_directory)
 
-        Digest::SHA1.base64digest(remote)[0..6].tap do |remote_digest|
-          cache_path = File.join(query_directory, remote_digest)
+        # NOTE: url unsafe chars are removed
+        remote_digest = Digest::SHA1.base64digest(remote)[0..6].gsub(/(\+|\/|\=)/, "")
+        remote_digest.tap do |digest|
+          cache_path = File.join(query_directory, digest)
           FileUtils.cp_r(authoritative_path, cache_path) unless Dir.exists?(cache_path)
         end
       end
