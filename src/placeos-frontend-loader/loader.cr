@@ -250,7 +250,7 @@ module PlaceOS::FrontendLoader
           Git.fetch(repository_folder_name, content_directory)
 
           # Pull HEAD of branch
-          Git.pull(repository_folder_name, content_directory, branch, raises: true)
+          Git.pull(repository_folder_name, content_directory, branch: branch, raises: true)
         end
       end
     end

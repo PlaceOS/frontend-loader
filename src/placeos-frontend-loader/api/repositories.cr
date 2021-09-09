@@ -1,3 +1,4 @@
+require "digest/sha1"
 require "placeos-compiler/git"
 
 require "./base"
@@ -27,11 +28,14 @@ module PlaceOS::FrontendLoader::Api
     end
 
     def self.commits(folder : String, branch : String, count : Int32 = 50, loader : Loader = Loader.instance)
-      Git.repository_commits(
-        repository: folder,
-        working_directory: loader.content_directory,
-        count: count, branch: branch
-      )
+      with_query_directory(folder, loader) do |key, directory|
+        Git.repository_commits(
+          repository: key,
+          working_directory: directory,
+          count: count,
+          branch: branch
+        )
+      end
     rescue e
       Log.error(exception: e) { "failed to fetch commmits" }
       nil
@@ -48,7 +52,9 @@ module PlaceOS::FrontendLoader::Api
     end
 
     def self.branches(folder, loader : Loader = Loader.instance)
-      Git.branches(folder, loader.content_directory)
+      with_query_directory(folder, loader) do |key, directory|
+        Git.branches(key, directory)
+      end
     rescue e
       Log.error(exception: e) { "failed to fetch branches" }
       nil
@@ -72,6 +78,27 @@ module PlaceOS::FrontendLoader::Api
         .each_with_object({} of String => String) { |folder_name, hash|
           hash[folder_name] = Compiler::Git.current_repository_commit(folder_name, content_directory)
         }
+    end
+
+    # Clean repository copies to query
+    ###########################################################################
+
+    class_property query_directory : String do
+      File.join(Dir.tempdir, "loader-queries").tap(&->Dir.mkdir_p(String))
+    end
+
+    def self.with_query_directory(folder, loader : Loader = Loader.instance)
+      authoritative_path = File.join(loader.content_directory, folder)
+      key = Git.repository_lock(authoritative_path).read do
+        remote = Git.remote(folder, loader.content_directory)
+
+        Digest::SHA1.base64digest(remote)[0..6].tap do |remote_digest|
+          cache_path = File.join(query_directory, remote_digest)
+          FileUtils.cp_r(authoritative_path, cache_path) unless Dir.exists?(cache_path)
+        end
+      end
+
+      yield ({key, query_directory})
     end
   end
 end

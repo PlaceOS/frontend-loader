@@ -78,7 +78,7 @@ module PlaceOS::FrontendLoader
 
     it "supports changing a uri" do
       expected_uri = "https://github.com/placeOS/private-drivers"
-      repository.username= "robot@place.tech"
+      repository.username = "robot@place.tech"
 
       loader = Loader.new
       loader.process_resource(:created, repository).success?.should be_true
@@ -115,14 +115,15 @@ module PlaceOS::FrontendLoader
 
         Dir.exists?(expected_path).should be_true
         Compiler::Git.current_branch(expected_path).should eq branch
+
         Compiler::Git.current_repository_commit(folder, loader.content_directory).should eq checked_out_commit
 
-        Api::Repositories.branches(folder, loader)
+        Api::Repositories.branches(folder, loader).not_nil!.should_not be_empty
         Api::Repositories.commits(folder, branch, loader: loader).not_nil!.should_not be_empty
         Api::Repositories.commits(folder, "master", loader: loader).not_nil!.should_not be_empty
-        Api::Repositories.commits(folder, branch, loader: loader).not_nil!.should_not be_empty
 
         Compiler::Git.current_repository_commit(folder, loader.content_directory).should eq checked_out_commit
+        Compiler::Git.current_branch(expected_path).should eq branch
       end
 
       it "loads a specific branch" do
