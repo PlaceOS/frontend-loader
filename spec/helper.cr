@@ -22,25 +22,27 @@ def reset
   FileUtils.rm_rf(TEST_DIR)
 end
 
+TEST_FOLDER = "test-repo"
+
 def example_repository(
+  folder_name : String = UUID.random.to_s[0..8],
   uri : String = "https://github.com/placeos/compiler",
+  commit : String = "HEAD",
   branch : String = "master"
 )
-  existing = PlaceOS::Model::Repository.where(folder_name: "test-repo").first?
+  existing = PlaceOS::Model::Repository.where(folder_name: folder_name).first?
   if existing
-    unless existing.uri == uri && existing.branch == branch
-      existing.uri = uri
-      existing.branch = branch
-    end
-
+    existing.uri = uri unless existing.uri == uri
+    existing.branch = branch unless existing.branch == branch
+    existing.commit_hash = commit unless existing.commit_hash == commit
     existing
   else
-    repository = PlaceOS::Model::Generator.repository(type: :interface)
-    repository.uri = uri
-    repository.username = "robot@place.tech"
-    repository.name = "Test"
-    repository.folder_name = "test-repo"
-    repository.branch = branch
-    repository
+    PlaceOS::Model::Generator.repository(type: :interface).tap do |repository|
+      repository.uri = uri
+      repository.username = "robot@place.tech"
+      repository.folder_name = folder_name
+      repository.commit_hash = commit
+      repository.branch = branch
+    end
   end
 end

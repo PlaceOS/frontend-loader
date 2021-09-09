@@ -2,11 +2,11 @@ require "./helper"
 
 module PlaceOS::FrontendLoader
   describe Loader do
-    repository = example_repository
+    repository = example_repository(TEST_FOLDER)
     expected_path = File.join(TEST_DIR, repository.folder_name)
 
     Spec.before_each do
-      repository = example_repository
+      repository = example_repository(TEST_FOLDER)
       expected_path = File.join(TEST_DIR, repository.folder_name)
       reset
     end
@@ -24,17 +24,11 @@ module PlaceOS::FrontendLoader
         old_token = "fake_password"
         new_token = "fake_password_electric_boogaloo"
 
-        changes = [] of RethinkORM::Changefeed::Change(PlaceOS::Model::Repository)
-        repo = PlaceOS::Model::Generator.repository(type: :interface).tap do |r|
-          r.name = "compiler"
-          r.uri = "https://github.com/placeos/compiler"
-          r.username = "robot@place.tech"
-          r.folder_name = UUID.random.to_s
-          r.username = "robot@place.tech"
-          r.commit_hash = "f7c6d8fb810c2be78722249e06bbfbda3d30d355"
-          r.password = old_token
-        end.save!
+        repository = example_repository(commit: "f7c6d8fb810c2be78722249e06bbfbda3d30d355")
+        repository.password = old_token
+        repository.save!
 
+        changes = [] of RethinkORM::Changefeed::Change(PlaceOS::Model::Repository)
         spawn do
           Model::Repository.changes.each do |change|
             changes << change
@@ -43,13 +37,13 @@ module PlaceOS::FrontendLoader
 
         loader = Loader.new
 
-        loader.process_resource(:created, repo).success?.should be_true
-        repo.reload!
-        repo.password = new_token
-        repo.save!
+        loader.process_resource(:created, repository).success?.should be_true
+        repository.reload!
+        repository.password = new_token
+        repository.save!
 
-        repo.password_will_change!
-        loader.process_resource(:updated, repo).success?.should be_true
+        repository.password_will_change!
+        loader.process_resource(:updated, repository).success?.should be_true
 
         sleep 10.seconds
         changes.size.should eq 1
