@@ -113,6 +113,7 @@ module PlaceOS::FrontendLoader
       repository : Model::Repository,
       content_directory : String
     )
+      branch = repository.branch
       username = repository.username || Loader.settings.username
       password = repository.decrypt_password || Loader.settings.password
       repository_commit = repository.commit_hash
@@ -131,13 +132,13 @@ module PlaceOS::FrontendLoader
         content_directory: content_directory,
         username: username,
         password: password,
-        branch: repository.branch,
+        branch: branch,
       )
 
       hash = repository.should_pull? ? "HEAD" : repository.commit_hash
 
       # Checkout repository to commit on the model
-      Git.checkout_branch(repository.branch, repository.folder_name, content_directory)
+      Git.checkout_branch(branch, repository.folder_name, content_directory)
       Git._checkout(repository_directory, hash, raises: false)
 
       # Grab commit for the cloned/pulled repository
@@ -163,7 +164,7 @@ module PlaceOS::FrontendLoader
       Log.info { {
         message:           "loaded repository",
         commit:            checked_out_commit,
-        branch:            repository.branch,
+        branch:            branch,
         repository:        repository.folder_name,
         repository_commit: repository_commit,
         uri:               repository.uri,
