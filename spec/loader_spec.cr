@@ -114,16 +114,16 @@ module PlaceOS::FrontendLoader
         expected_path = File.join(loader.content_directory, folder)
 
         Dir.exists?(expected_path).should be_true
-        Compiler::Git.current_branch(expected_path).should eq branch
-
         Compiler::Git.current_repository_commit(folder, loader.content_directory).should eq checked_out_commit
+        Api::Repositories.with_query_directory do |key, directory|
+          Compiler::Git.current_repository_commit(key, directory).should eq checked_out_commit
+          Api::Repositories.branches(folder, loader).not_nil!.should_not be_empty
+          Api::Repositories.commits(folder, branch, loader: loader).not_nil!.should_not be_empty
+          Api::Repositories.commits(folder, "master", loader: loader).not_nil!.should_not be_empty
 
-        Api::Repositories.branches(folder, loader).not_nil!.should_not be_empty
-        Api::Repositories.commits(folder, branch, loader: loader).not_nil!.should_not be_empty
-        Api::Repositories.commits(folder, "master", loader: loader).not_nil!.should_not be_empty
-
+          Compiler::Git.current_repository_commit(key, directory).should eq checked_out_commit
+        end
         Compiler::Git.current_repository_commit(folder, loader.content_directory).should eq checked_out_commit
-        Compiler::Git.current_branch(expected_path).should eq branch
       end
 
       it "loads a specific branch" do
