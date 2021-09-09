@@ -44,12 +44,9 @@ module PlaceOS::FrontendLoader::Api
 
         Dir.exists?(expected_path).should be_true
         Compiler::Git.current_repository_commit(folder, loader.content_directory).should eq checked_out_commit
-
-        Api::Repositories.with_query_directory(folder, loader) do |key, directory|
-          Api::Repositories.branches(folder, loader).not_nil!.should_not be_empty
-          Api::Repositories.commits(folder, branch, loader: loader).not_nil!.should_not be_empty
-          Api::Repositories.commits(folder, "master", loader: loader).not_nil!.should_not be_empty
-        end
+        Api::Repositories.branches(folder, loader).not_nil!.should_not be_empty
+        Api::Repositories.commits(folder, branch, loader: loader).not_nil!.should_not be_empty
+        Api::Repositories.commits(folder, "master", loader: loader).not_nil!.should_not be_empty
 
         Compiler::Git.current_repository_commit(folder, loader.content_directory).should eq checked_out_commit
       end
