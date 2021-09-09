@@ -16,7 +16,7 @@ dependencies:
 
   placeos-compiler:
     github: placeos/compiler
-    version: ~> 4.7
+    branch: fix/current-commit
 
   placeos-models:
     github: placeos/models
