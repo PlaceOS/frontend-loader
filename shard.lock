@@ -107,7 +107,7 @@ shards:
 
   placeos-compiler:
     git: https://github.com/placeos/compiler.git
-    version: 4.8.0+git.commit.597b528d04e4c0a958bf6658e7855814200d13e3
+    version: 4.8.0
 
   placeos-core-client:
     git: https://github.com/placeos/core-client.git
