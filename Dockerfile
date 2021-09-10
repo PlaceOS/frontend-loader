@@ -17,7 +17,7 @@ COPY src /build/src
 
 RUN PLACE_COMMIT=$PLACE_COMMIT \
     PLACE_VERSION=$PLACE_VERSION \
-    crystal build --static --release --no-debug --error-trace -o bin/frontends src/app.cr
+    crystal build --static --release bin/frontends src/app.cr
 
 FROM alpine:3.14
 WORKDIR /app
