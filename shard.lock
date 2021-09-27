@@ -33,6 +33,10 @@ shards:
     git: https://github.com/kostya/cron_parser.git
     version: 0.4.0
 
+  crunits:
+    git: https://github.com/spider-gazelle/crunits.git
+    version: 1.1.0
+
   db:
     git: https://github.com/crystal-lang/crystal-db.git
     version: 0.10.1
@@ -91,7 +95,7 @@ shards:
 
   lucky_router:
     git: https://github.com/luckyframework/lucky_router.git
-    version: 0.5.0
+    version: 0.5.1
 
   murmur3:
     git: https://github.com/aca-labs/murmur3.git
@@ -105,6 +109,10 @@ shards:
     git: https://github.com/spider-gazelle/openssl_ext.git
     version: 2.1.5
 
+  pars:
+    git: https://github.com/place-labs/pars.git
+    version: 1.1.0
+
   placeos-compiler:
     git: https://github.com/placeos/compiler.git
     version: 4.8.0
@@ -115,15 +123,15 @@ shards:
 
   placeos-driver:
     git: https://github.com/placeos/driver.git
-    version: 5.5.8
+    version: 5.7.2
 
   placeos-log-backend:
     git: https://github.com/place-labs/log-backend.git
-    version: 0.5.1
+    version: 0.6.0
 
   placeos-models:
     git: https://github.com/placeos/models.git
-    version: 5.10.1
+    version: 5.11.0
 
   placeos-resource:
     git: https://github.com/place-labs/resource.git
@@ -155,7 +163,7 @@ shards:
 
   rethinkdb:
     git: https://github.com/place-labs/crystal-rethinkdb.git
-    version: 0.3.1+git.commit.bd193b6fed95619da3d963267bf61ed35b1fd7f5
+    version: 0.3.1+git.commit.af92ace5eb60e861a41b93456ac5d73b80feb7bb
 
   rethinkdb-orm:
     git: https://github.com/spider-gazelle/rethinkdb-orm.git
