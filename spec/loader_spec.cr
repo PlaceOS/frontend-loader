@@ -11,17 +11,17 @@ module PlaceOS::FrontendLoader
       reset
     end
 
-    describe "#started?" do
+    describe "#startup_finished?" do
       it "is `true` after initial interfaces have loaded" do
         loader = Loader.new
-        loader.started?.should be_false
+        loader.startup_finished?.should be_false
         loader.start
 
         Dir.exists?(File.join(TEST_DIR, "login")).should be_true
 
-        loader.started?.should be_true
+        loader.startup_finished?.should be_true
         loader.stop
-        loader.started?.should be_false
+        loader.startup_finished?.should be_false
       end
     end
 
