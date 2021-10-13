@@ -11,7 +11,7 @@ module PlaceOS::FrontendLoader::Api
     end
 
     get "/startup", :startup do
-      if PlaceOS::FrontendLoader::Loader.instance.started?
+      if PlaceOS::FrontendLoader::Loader.instance.startup_finished?
         head :ok
       else
         head :service_unavailable
