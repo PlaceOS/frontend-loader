@@ -70,10 +70,6 @@ PlaceOS::FrontendLoader::Loader.configure do |settings|
   git_password.try { |gp| settings.password = gp }
 end
 
-# Start the loader
-
-PlaceOS::FrontendLoader::Loader.instance.start
-
 # Server Configuration
 
 server = ActionController::Server.new(port, host)
@@ -101,6 +97,16 @@ end
 # Default production log levels (INFO and above) `kill -s USR2 %PID`
 Signal::USR1.trap &logging
 Signal::USR2.trap &logging
+
+# Asynchronously start the loader
+spawn(same_thread: true) do
+  begin
+    PlaceOS::FrontendLoader::Loader.instance.start
+  rescue error
+    PlaceOS::FrontendLoader::Loader::Log.error(exception: error) { "startup failed" }
+    server.close
+  end
+end
 
 # Start the server
 server.run do

@@ -10,6 +10,14 @@ module PlaceOS::FrontendLoader::Api
       head :ok
     end
 
+    get "/startup", :startup do
+      if PlaceOS::FrontendLoader::Loader.instance.started?
+        head :ok
+      else
+        head :service_unavailable
+      end
+    end
+
     get "/version", :version do
       render :ok, json: PlaceOS::Model::Version.new(
         version: VERSION,

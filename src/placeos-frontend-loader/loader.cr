@@ -5,6 +5,8 @@ require "placeos-models/repository"
 require "placeos-resource"
 require "tasker"
 
+require "../constants.cr"
+
 module PlaceOS::FrontendLoader
   class Loader < Resource(Model::Repository)
     Log = ::Log.for(self)
@@ -30,6 +32,8 @@ module PlaceOS::FrontendLoader
     getter update_crontab : String
     private property update_cron : Tasker::CRON(Int64)? = nil
 
+    getter? started : Bool = false
+
     def initialize(
       @content_directory : String = Loader.settings.content_directory,
       @update_crontab : String = Loader.settings.update_crontab
@@ -40,10 +44,14 @@ module PlaceOS::FrontendLoader
     def start
       create_base_www
       start_update_cron
-      super
+      super.tap do
+        # Set the startup completion status
+        @started = true
+      end
     end
 
     def stop
+      @started = false
       update_cron.try &.cancel
       super
     end

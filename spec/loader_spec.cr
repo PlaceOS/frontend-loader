@@ -5,10 +5,24 @@ module PlaceOS::FrontendLoader
     repository = example_repository(TEST_FOLDER)
     expected_path = File.join(TEST_DIR, repository.folder_name)
 
-    Spec.before_each do
+    before_each do
       repository = example_repository(TEST_FOLDER)
       expected_path = File.join(TEST_DIR, repository.folder_name)
       reset
+    end
+
+    describe "#started?" do
+      it "is `true` after initial interfaces have loaded" do
+        loader = Loader.new
+        loader.started?.should be_false
+        loader.start
+
+        Dir.exists?(File.join(TEST_DIR, "login")).should be_true
+
+        loader.started?.should be_true
+        loader.stop
+        loader.started?.should be_false
+      end
     end
 
     it "implicity loads www base" do
