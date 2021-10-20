@@ -27,18 +27,50 @@ module PlaceOS::FrontendLoader::Api
       commits.nil? ? head :not_found : render json: commits
     end
 
-    def self.commits(folder : String, branch : String, count : Int32 = 50, loader : Loader = Loader.instance)
-      with_query_directory(folder, loader) do |key, directory|
-        Git.repository_commits(
-          repository: key,
-          working_directory: directory,
-          count: count,
-          branch: branch
+    def self.get_commits(uri : String, count : Int32)
+      response = HTTP::Client.get uri
+      commits = Array(Git::Commit).new
+      parsed = JSON.parse(response.body).as_a
+      parsed.each do |value|
+        commit = Git::Commit.new(
+          commit: value["sha"].as_s,
+          date: value["commit"]["author"]["date"].as_s,
+          author: value["commit"]["author"]["name"].as_s,
+          subject: value["commit"]["message"].as_s.strip(%(\n))
         )
+        commits << commit
       end
-    rescue e
-      Log.error(exception: e) { "failed to fetch commmits" }
-      nil
+      commits[0...count]
+    end
+
+    def self._commits(repo : String, branch : String, count : Int32 = 50)
+      get_commits("https://api.github.com/repos/#{repo}/commits?sha=#{branch}", count)
+    end
+
+    def self.commits(folder : String, branch : String, count : Int32 = 50, loader : Loader = Loader.instance)
+      begin
+        repo = current_repo(loader.content_directory, folder)
+        _commits(repo, branch, count)
+      rescue e
+        Log.error(exception: e) { "failed to fetch commmits" }
+        nil
+      end
+    end
+
+    def self.branches_lookup(repo)
+      response = HTTP::Client.get "https://api.github.com/repos/#{repo}/branches"
+      parsed2 = JSON.parse(response.body).as_a
+      branches = Hash(String, String).new
+      parsed2.each do |value|
+        next if value =~ /HEAD/
+        branch_name = value["name"].to_s.strip.lchop("origin/")
+        branches[branch_name] = value["commit"]["sha"].to_s
+      end
+      branches
+    end
+
+    def self._branches(repo : String)
+      branches_lookup(repo).keys.sort!.uniq!
     end
 
     # Returns an array of branches for a repository
@@ -52,12 +84,13 @@ module PlaceOS::FrontendLoader::Api
     end
 
     def self.branches(folder, loader : Loader = Loader.instance)
-      with_query_directory(folder, loader) do |key, directory|
-        Git.branches(key, directory)
+      begin
+        repo = current_repo(loader.content_directory, folder)
+        _branches(repo)
+      rescue e
+        Log.error(exception: e) { "failed to fetch branches" }
+        nil
       end
-    rescue e
-      Log.error(exception: e) { "failed to fetch branches" }
-      nil
     end
 
     # Returns a hash of folder name to commits
@@ -73,34 +106,30 @@ module PlaceOS::FrontendLoader::Api
         .reject(/^\./)
         .select { |e|
           path = File.join(content_directory, e)
-          File.directory?(path) && File.exists?(File.join(path, ".git"))
+          File.directory?(path)
         }
         .each_with_object({} of String => String) { |folder_name, hash|
-          hash[folder_name] = Compiler::Git.current_repository_commit(folder_name, content_directory)
+          hash[folder_name] = Api::Repositories.current_commit(content_directory, folder_name)
         }
     end
 
-    # Clean repository copies to query
-    ###########################################################################
-
-    class_property query_directory : String do
-      File.join(Dir.tempdir, "loader-queries").tap(&->Dir.mkdir_p(String))
+    def self.get_branch_name(repo, hash)
+      branches = branches_lookup(repo)
+      raise Exception.new("Incorrect hash") unless branches.has_value?(hash)
+      branches.key_for(hash)
     end
 
-    def self.with_query_directory(folder, loader : Loader = Loader.instance)
-      authoritative_path = File.join(loader.content_directory, folder)
-      key = Git.repository_lock(authoritative_path).read do
-        remote = Git.remote(folder, loader.content_directory)
+    def self.current_branch(repository_path : String, repo : String)
+      hash = File.read(Path.new([repository_path, "current_hash.txt"]))
+      get_branch_name(repo, hash).to_s.strip
+    end
 
-        # NOTE: url unsafe chars are removed
-        remote_digest = Digest::SHA1.base64digest(remote)[0..6].gsub(/(\+|\/|\=)/, "")
-        remote_digest.tap do |digest|
-          cache_path = File.join(query_directory, digest)
-          FileUtils.cp_r(authoritative_path, cache_path) unless Dir.exists?(cache_path)
-        end
-      end
+    def self.current_commit(parent, folder)
+      File.read(Path.new([parent, folder, "current_hash.txt"]))
+    end
 
-      yield ({key, query_directory})
+    def self.current_repo(parent, folder)
+      File.read(Path.new([parent, folder, "current_repo.txt"]))
     end
   end
 end

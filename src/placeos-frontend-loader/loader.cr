@@ -5,6 +5,9 @@ require "placeos-models/repository"
 require "placeos-resource"
 require "tasker"
 
+require "http/client"
+require "crystar"
+
 require "../constants.cr"
 
 module PlaceOS::FrontendLoader
@@ -12,6 +15,7 @@ module PlaceOS::FrontendLoader
     Log = ::Log.for(self)
 
     private alias Git = PlaceOS::Compiler::Git
+    TAR_NAME = "temp.tar.gz"
 
     Habitat.create do
       setting content_directory : String = WWW
@@ -53,7 +57,7 @@ module PlaceOS::FrontendLoader
     # Frontend loader implicitly and idempotently creates a base www
     protected def create_base_www
       content_directory_parent = Path[content_directory].parent.to_s
-      Loader.clone_and_pull(
+      Loader.download_and_extract(
         repository_folder_name: content_directory,
         repository_uri: "https://github.com/PlaceOS/www-core",
         content_directory: content_directory_parent,
@@ -127,24 +131,20 @@ module PlaceOS::FrontendLoader
         unload(repository, content_directory)
       end
 
-      # Clone and pull the repository
-      clone_and_pull(
+      hash = repository.should_pull? ? "HEAD" : repository.commit_hash
+      # Download and extract the repository at given branch or commit
+      download_and_extract(
         repository_folder_name: repository.folder_name,
         repository_uri: repository.uri,
         content_directory: content_directory,
+        repository_commit: hash,
         username: username,
         password: password,
         branch: branch,
       )
 
-      hash = repository.should_pull? ? "HEAD" : repository.commit_hash
-
-      # Checkout repository to commit on the model
-      Git.checkout_branch(branch, repository.folder_name, content_directory)
-      Git._checkout(repository_directory, hash, raises: false)
-
-      # Grab commit for the cloned/pulled repository
-      checked_out_commit = Git.current_repository_commit(repository.folder_name, content_directory)
+      # Grab commit for the downloaded/extracted repository
+      checked_out_commit = Api::Repositories.current_commit(content_directory, repository.folder_name)
 
       # Update model commit iff...
       # - the repository is not held at HEAD
@@ -212,48 +212,113 @@ module PlaceOS::FrontendLoader
       end
     end
 
-    def self.clone_and_pull(
+    def self.download_file(url, dest)
+      begin
+        HTTP::Client.get(url) do |redirect_response|
+          raise Exception.new("status_code for #{url} was #{redirect_response.status_code}") unless redirect_response.status_code < 400
+          HTTP::Client.get(redirect_response.headers["location"]) do |response|
+            File.write(dest, response.body_io)
+          end
+        end
+        File.new(dest)
+      rescue ex : Exception
+        Log.error(exception: ex) { "Could not download file at URL: #{url}" }
+      end
+    end
+
+    def self.extract_file(tar_name, dest_path)
+      raise Exception.new("File #{tar_name} does not exist") unless File.exists?(Path.new(tar_name))
+      if !Dir.exists?(Path.new(["./", dest_path]))
+        File.open(tar_name) do |file|
+          begin
+            Compress::Gzip::Reader.open(file) do |gzip|
+              Crystar::Reader.open(gzip) do |tar|
+                tar.each_entry do |entry|
+                  next if entry.file_info.directory?
+                  parts = Path.new(entry.name).parts
+                  parts = parts.last(parts.size > 1 ? parts.size - 1 : 0)
+                  next if parts.size == 0
+                  filePath = Path.new([dest_path] + parts)
+                  Dir.mkdir_p(filePath.dirname) unless Dir.exists?(filePath.dirname)
+                  File.write(filePath, entry.io, perm = entry.file_info.permissions)
+                end
+              end
+            end
+          rescue ex : Exception
+            Log.error(exception: ex) { "Could not unzip tar" }
+          end
+        end
+      end
+      File.delete(tar_name)
+    end
+
+    def self.get_hashes(repo_url : String)
+      stdout = IO::Memory.new
+      Process.new("git", ["ls-remote", repo_url], output: stdout).wait
+      output = stdout.to_s.split('\n')
+      ref_hash = Hash(String, String).new
+      output.each do |ref|
+        next if ref.empty?
+        split = ref.partition('\t')
+        ref_hash[split[2]] = split[0]
+      end
+      ref_hash
+    end
+
+    def self.get_hash_head(repo_url : String)
+      ref_hash = get_hashes(repo_url)
+      ref_hash.has_key?("HEAD") ? ref_hash["HEAD"] : ref_hash.first_key?
+    end
+
+    def self.get_hash_by_branch(repo_url : String, branch : String)
+      ref_hash = get_hashes(repo_url)
+      raise Exception.new("Branch #{branch} does not exist in repo") unless ref_hash.has_key?("refs/heads/#{branch}")
+      ref_hash["refs/heads/#{branch}"]
+    end
+
+    def self.save_metadata(parent_folder : String, folder_name : String, hash : String, repository_uri : String)
+      hash_path = Path.new([parent_folder, folder_name, "current_hash.txt"])
+      File.write(hash_path, hash)
+      repo_path = Path.new([parent_folder, folder_name, "current_repo.txt"])
+      repo = repository_uri.partition(".com/")[2]
+      File.write(repo_path, repo)
+    end
+
+    def self.download_and_extract(
       repository_folder_name : String,
       repository_uri : String,
       content_directory : String,
       branch : String,
+      repository_commit : String? = nil,
       username : String? = nil,
       password : String? = nil,
       depth : Int32? = nil
     )
       Git.repository_lock(repository_folder_name).write do
         Log.info { {
-          message:    "cloning repository",
+          message:    "downloading repository",
           repository: repository_folder_name,
           branch:     branch,
           uri:        repository_uri,
         } }
 
-        clone_result = Git.clone(
-          repository: repository_folder_name,
-          repository_uri: repository_uri,
-          username: username,
-          password: password,
-          working_directory: content_directory,
-          depth: depth,
-          branch: branch,
-          raises: true,
-        )
-
-        # Pull if already cloned and pull intended
-        if clone_result.output.includes?("already exists")
-          Log.info { {
-            message:    "pulling repository",
-            repository: repository_folder_name,
-            branch:     branch,
-            uri:        repository_uri,
-          } }
-
-          # Ensure branch is locally present
-          Git.fetch(repository_folder_name, content_directory)
-
-          # Pull HEAD of branch
-          Git.pull(repository_folder_name, content_directory, branch: branch, raises: true)
+        begin
+          if branch != "master"
+            hash = get_hash_by_branch(repository_uri, branch)
+          else
+            unless repository_commit.nil? || repository_commit == "HEAD"
+              hash = repository_commit
+            else
+              hash = get_hash_head(repository_uri)
+            end
+          end
+          hash = hash.not_nil!
+          tar_url = "#{repository_uri}/archive/#{hash}.tar.gz"
+          download_file(tar_url, TAR_NAME)
+          extract_file(TAR_NAME, content_directory + "/" + repository_folder_name)
+          save_metadata(content_directory, repository_folder_name, hash, repository_uri)
+        rescue ex : Exception
+          Log.error(exception: ex) { ex.message }
         end
       end
     end

@@ -42,13 +42,13 @@ module PlaceOS::FrontendLoader::Api
         folder = repository.folder_name
         expected_path = File.join(loader.content_directory, folder)
 
+        repo = repository.uri.partition(".com/")[2]
         Dir.exists?(expected_path).should be_true
-        Compiler::Git.current_repository_commit(folder, loader.content_directory).should eq checked_out_commit
+        Api::Repositories.current_commit(loader.content_directory, folder).should eq checked_out_commit
         Api::Repositories.branches(folder, loader).not_nil!.should_not be_empty
         Api::Repositories.commits(folder, branch, loader: loader).not_nil!.should_not be_empty
         Api::Repositories.commits(folder, "master", loader: loader).not_nil!.should_not be_empty
-
-        Compiler::Git.current_repository_commit(folder, loader.content_directory).should eq checked_out_commit
+        Api::Repositories.current_commit(loader.content_directory, folder).should eq checked_out_commit
       end
     end
   end
