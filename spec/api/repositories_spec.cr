@@ -42,7 +42,6 @@ module PlaceOS::FrontendLoader::Api
         folder = repository.folder_name
         expected_path = File.join(loader.content_directory, folder)
 
-        repo = repository.uri.partition(".com/")[2]
         Dir.exists?(expected_path).should be_true
         Api::Repositories.current_commit(loader.content_directory, folder).should eq checked_out_commit
         Api::Repositories.branches(folder, loader).not_nil!.should_not be_empty

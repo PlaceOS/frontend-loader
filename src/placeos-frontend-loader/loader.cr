@@ -213,17 +213,15 @@ module PlaceOS::FrontendLoader
     end
 
     def self.download_file(url, dest)
-      begin
-        HTTP::Client.get(url) do |redirect_response|
-          raise Exception.new("status_code for #{url} was #{redirect_response.status_code}") unless redirect_response.status_code < 400
-          HTTP::Client.get(redirect_response.headers["location"]) do |response|
-            File.write(dest, response.body_io)
-          end
+      HTTP::Client.get(url) do |redirect_response|
+        raise Exception.new("status_code for #{url} was #{redirect_response.status_code}") unless redirect_response.status_code < 400
+        HTTP::Client.get(redirect_response.headers["location"]) do |response|
+          File.write(dest, response.body_io)
         end
-        File.new(dest)
-      rescue ex : Exception
-        Log.error(exception: ex) { "Could not download file at URL: #{url}" }
       end
+      File.new(dest)
+    rescue ex : Exception
+      Log.error(exception: ex) { "Could not download file at URL: #{ex.message}" }
     end
 
     def self.extract_file(tar_name, dest_path)
@@ -238,9 +236,9 @@ module PlaceOS::FrontendLoader
                   parts = Path.new(entry.name).parts
                   parts = parts.last(parts.size > 1 ? parts.size - 1 : 0)
                   next if parts.size == 0
-                  filePath = Path.new([dest_path] + parts)
-                  Dir.mkdir_p(filePath.dirname) unless Dir.exists?(filePath.dirname)
-                  File.write(filePath, entry.io, perm = entry.file_info.permissions)
+                  file_path = Path.new([dest_path] + parts)
+                  Dir.mkdir_p(file_path.dirname) unless Dir.exists?(file_path.dirname)
+                  File.write(file_path, entry.io, perm: entry.file_info.permissions)
                 end
               end
             end
@@ -306,10 +304,10 @@ module PlaceOS::FrontendLoader
           if branch != "master"
             hash = get_hash_by_branch(repository_uri, branch)
           else
-            unless repository_commit.nil? || repository_commit == "HEAD"
-              hash = repository_commit
-            else
+            if repository_commit.nil? || repository_commit == "HEAD"
               hash = get_hash_head(repository_uri)
+            else
+              hash = repository_commit
             end
           end
           hash = hash.not_nil!

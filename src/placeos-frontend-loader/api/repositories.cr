@@ -29,6 +29,7 @@ module PlaceOS::FrontendLoader::Api
 
     def self.get_commits(uri : String, count : Int32)
       response = HTTP::Client.get uri
+      raise Exception.new("status_code for #{uri} was #{response.status_code}") unless response.status_code < 400
       commits = Array(Git::Commit).new
       parsed = JSON.parse(response.body).as_a
       parsed.each do |value|
@@ -48,17 +49,17 @@ module PlaceOS::FrontendLoader::Api
     end
 
     def self.commits(folder : String, branch : String, count : Int32 = 50, loader : Loader = Loader.instance)
-      begin
-        repo = current_repo(loader.content_directory, folder)
-        _commits(repo, branch, count)
-      rescue e
-        Log.error(exception: e) { "failed to fetch commmits" }
-        nil
-      end
+      repo = current_repo(loader.content_directory, folder)
+      _commits(repo, branch, count)
+    rescue e
+      Log.error(exception: e) { "failed to fetch commmits: #{e.message}" }
+      nil
     end
 
     def self.branches_lookup(repo)
-      response = HTTP::Client.get "https://api.github.com/repos/#{repo}/branches"
+      uri = "https://api.github.com/repos/#{repo}/branches"
+      response = HTTP::Client.get uri
+      raise Exception.new("status_code for #{uri} was #{response.status_code}") unless response.status_code < 400
       parsed2 = JSON.parse(response.body).as_a
       branches = Hash(String, String).new
       parsed2.each do |value|
@@ -84,13 +85,11 @@ module PlaceOS::FrontendLoader::Api
     end
 
     def self.branches(folder, loader : Loader = Loader.instance)
-      begin
-        repo = current_repo(loader.content_directory, folder)
-        _branches(repo)
-      rescue e
-        Log.error(exception: e) { "failed to fetch branches" }
-        nil
-      end
+      repo = current_repo(loader.content_directory, folder)
+      _branches(repo)
+    rescue e
+      Log.error(exception: e) { "failed to fetch branches" }
+      nil
     end
 
     # Returns a hash of folder name to commits
