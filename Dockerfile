@@ -22,7 +22,12 @@ RUN PLACE_COMMIT=$PLACE_COMMIT \
 FROM alpine:3.14
 WORKDIR /app
 
-RUN apk upgrade && apk add --update --no-cache ca-certificates git openssh
+RUN apk add --update --no-cache \
+    'apk-tools>=2.10.8-r0' \
+    ca-certificates \
+    git \
+    'libcurl>=7.79.1-r0' \
+    openssh
 
 # Add trusted CAs for communicating with external services
 RUN update-ca-certificates
