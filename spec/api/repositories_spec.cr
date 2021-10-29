@@ -43,11 +43,11 @@ module PlaceOS::FrontendLoader::Api
         expected_path = File.join(loader.content_directory, folder)
 
         Dir.exists?(expected_path).should be_true
-        Api::Repositories.current_commit(loader.content_directory, folder).should eq checked_out_commit
+        Api::Repositories.current_commit(expected_path).should eq checked_out_commit
         Api::Repositories.branches(folder, loader).not_nil!.should_not be_empty
         Api::Repositories.commits(folder, branch, loader: loader).not_nil!.should_not be_empty
         Api::Repositories.commits(folder, "master", loader: loader).not_nil!.should_not be_empty
-        Api::Repositories.current_commit(loader.content_directory, folder).should eq checked_out_commit
+        Api::Repositories.current_commit(expected_path).should eq checked_out_commit
       end
     end
   end

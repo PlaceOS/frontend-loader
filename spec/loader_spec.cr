@@ -97,7 +97,7 @@ module PlaceOS::FrontendLoader
       loader.process_resource(:updated, repository).success?.should be_true
 
       Dir.exists?(expected_path).should be_true
-      Api::Repositories.current_repo(loader.content_directory, TEST_FOLDER).should end_with("private-drivers")
+      Api::Repositories.current_repo(expected_path).should end_with("private-drivers")
     end
 
     describe "branches" do
@@ -122,12 +122,12 @@ module PlaceOS::FrontendLoader
         loader.process_resource(:created, repository).success?.should be_true
         Dir.exists?(expected_path).should be_true
         repo = repository.uri.partition(".com/")[2]
-        Api::Repositories.current_branch(expected_path, repo).should eq branch
+        Api::Repositories.current_branch(expected_path).should eq branch
         repository.clear_changes_information
         repository.branch = updated_branch
         loader.process_resource(:updated, repository).success?.should be_true
         Dir.exists?(expected_path).should be_true
-        Api::Repositories.current_branch(expected_path, repo).should eq updated_branch
+        Api::Repositories.current_branch(expected_path).should eq updated_branch
       end
     end
   end
