@@ -121,7 +121,6 @@ module PlaceOS::FrontendLoader
 
         loader.process_resource(:created, repository).success?.should be_true
         Dir.exists?(expected_path).should be_true
-        repo = repository.uri.partition(".com/")[2]
         Api::Repositories.current_branch(expected_path).should eq branch
         repository.clear_changes_information
         repository.branch = updated_branch

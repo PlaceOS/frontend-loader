@@ -17,6 +17,9 @@ module PlaceOS::FrontendLoader
   class Github < GitRemote
     # repo name e.g. PlaceOS/Core
     def initialize(@ref : String, @folder_name : String)
+      uri = "https://api.github.com/repos/#{@ref}/commits"
+      response = HTTP::Client.get uri
+      raise Exception.new("Repo #{@ref} is incorrect or does not exsist") unless response.status_code == 200
     end
 
     TAR_NAME = "temp.tar.gz"
