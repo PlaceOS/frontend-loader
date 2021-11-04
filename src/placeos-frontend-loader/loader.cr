@@ -78,10 +78,7 @@ module PlaceOS::FrontendLoader
       loaded = load_resources
 
       # Pull www (content directory)
-      # pull_result = Git.pull(".", content_directory)
-      # unless pull_result.success?
-      #   Log.error { "failed to pull www: #{pull_result.output}" }
-      # end
+      create_base_www
 
       loaded
     end

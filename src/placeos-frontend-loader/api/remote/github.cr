@@ -68,28 +68,28 @@ module PlaceOS::FrontendLoader
             branch:     branch,
             uri:        @ref,
           } }
-        end
 
-        repository_uri = github_url
+          repository_uri = github_url
 
-        begin
-          if branch != "master"
-            hash = get_hash_by_branch(repository_uri, branch)
-          else
-            if repository_commit.nil? || repository_commit == "HEAD"
-              hash = get_hash_head(repository_uri)
+          begin
+            if branch != "master"
+              hash = get_hash_by_branch(repository_uri, branch)
             else
-              hash = repository_commit
+              if repository_commit.nil? || repository_commit == "HEAD"
+                hash = get_hash_head(repository_uri)
+              else
+                hash = repository_commit
+              end
             end
+            hash = hash.not_nil!
+            tar_url = "#{repository_uri}/archive/#{hash}.tar.gz"
+            download_file(tar_url, TAR_NAME)
+            dest_path = Path.new([content_directory, repository_folder_name])
+            extract_file(TAR_NAME, dest_path)
+            save_metadata(dest_path, hash, repository_uri, branch)
+          rescue ex : Exception
+            Log.error(exception: ex) { ex.message }
           end
-          hash = hash.not_nil!
-          tar_url = "#{repository_uri}/archive/#{hash}.tar.gz"
-          download_file(tar_url, TAR_NAME)
-          dest_path = Path.new([content_directory, repository_folder_name])
-          extract_file(TAR_NAME, dest_path)
-          save_metadata(dest_path, hash, repository_uri, branch)
-        rescue ex : Exception
-          Log.error(exception: ex) { ex.message }
         end
       end
 
