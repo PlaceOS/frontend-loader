@@ -9,6 +9,7 @@ require "http/client"
 require "crystar"
 
 require "../constants.cr"
+require "./api/remote/*"
 
 module PlaceOS::FrontendLoader
   class Loader < Resource(Model::Repository)
@@ -17,12 +18,14 @@ module PlaceOS::FrontendLoader
     private alias Git = PlaceOS::Compiler::Git
     TAR_NAME = "temp.tar.gz"
 
+    property last_loaded : Remote = Remote::Github.new("PlaceOS/www-core", WWW)
+
     Habitat.create do
       setting content_directory : String = WWW
       setting update_crontab : String = CRON
       setting username : String? = GIT_USER
       setting password : String? = GIT_PASS
-      setting last_loaded : GitRemote = Github.new("PlaceOS/www-core", WWW)
+      # setting last_loaded : Remote = Remote::Github.new("PlaceOS/www-core", WWW)
     end
 
     class_getter instance : Loader do
@@ -58,8 +61,8 @@ module PlaceOS::FrontendLoader
     # Frontend loader implicitly and idempotently creates a base www
     protected def create_base_www
       content_directory_parent = Path[content_directory].parent.to_s
-      Loader.settings.last_loaded = Github.new("PlaceOS/www-core", content_directory)
-      Loader.settings.last_loaded.download(repository_folder_name: content_directory, content_directory: content_directory_parent, branch: "master")
+      last_loaded = Remote::Github.new("PlaceOS/www-core", content_directory)
+      last_loaded.download(repository_folder_name: content_directory, content_directory: content_directory_parent, branch: "master")
     end
 
     protected def start_update_cron : Nil
@@ -127,8 +130,8 @@ module PlaceOS::FrontendLoader
 
       hash = repository.should_pull? ? "HEAD" : repository.commit_hash
       # Download and extract the repository at given branch or commit
-      Loader.settings.last_loaded = Github.new(repository.uri.partition(".com/")[2], repository.folder_name)
-      Loader.settings.last_loaded.download(repository_folder_name: repository.folder_name, repository_commit: hash, content_directory: content_directory, branch: branch)
+      last_loaded = Remote::Github.new(repository.uri.partition(".com/")[2], repository.folder_name)
+      last_loaded.download(repository_folder_name: repository.folder_name, repository_commit: hash, content_directory: content_directory, branch: branch)
 
       # Grab commit for the downloaded/extracted repository
       checked_out_commit = Api::Repositories.current_commit(repository_directory)

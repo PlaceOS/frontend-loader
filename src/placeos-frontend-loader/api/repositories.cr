@@ -27,9 +27,9 @@ module PlaceOS::FrontendLoader::Api
     def self.commits(folder : String, branch : String, count : Int32 = 50, loader : Loader = Loader.instance)
       unless loaded?(folder)
         repo = File.read(Path.new([loader.content_directory, folder, "current_repo.txt"]))
-        loader.settings.last_loaded = Github.new(repo, folder)
+        loader.last_loaded = Remote::Github.new(repo, folder)
       end
-      loader.settings.last_loaded.commits(branch)[0...count]
+      loader.last_loaded.commits(branch)[0...count]
     rescue e
       Log.error(exception: e) { "failed to fetch commmits: #{e.message}" }
       nil
@@ -48,9 +48,9 @@ module PlaceOS::FrontendLoader::Api
     def self.branches(folder, loader : Loader = Loader.instance)
       unless loaded?(folder)
         repo = File.read(Path.new([loader.content_directory, folder, "current_repo.txt"]))
-        loader.settings.last_loaded = Github.new(repo, folder)
+        loader.last_loaded = Remote::Github.new(repo, folder)
       end
-      loader.settings.last_loaded.branches.keys.sort!.uniq!
+      loader.last_loaded.branches.keys.sort!.uniq!
     rescue e
       Log.error(exception: e) { "failed to fetch branches for #{folder}" }
       nil
@@ -62,7 +62,7 @@ module PlaceOS::FrontendLoader::Api
     end
 
     def self.loaded?(folder : String)
-      folder == loader.settings.last_loaded.folder_name
+      folder == loader.last_loaded.folder_name
     end
 
     # Generates a hash of currently loaded repositories and their current commit
