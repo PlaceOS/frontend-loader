@@ -25,7 +25,6 @@ module PlaceOS::FrontendLoader
       setting update_crontab : String = CRON
       setting username : String? = GIT_USER
       setting password : String? = GIT_PASS
-      # setting last_loaded : Remote = Remote::Github.new("PlaceOS/www-core", WWW)
     end
 
     class_getter instance : Loader do
@@ -117,8 +116,8 @@ module PlaceOS::FrontendLoader
       content_directory : String
     )
       branch = repository.branch
-      username = repository.username || Loader.settings.username
-      password = repository.decrypt_password || Loader.settings.password
+      # username = repository.username || Loader.settings.username
+      # password = repository.decrypt_password || Loader.settings.password
       repository_commit = repository.commit_hash
       content_directory = File.expand_path(content_directory)
       repository_directory = File.expand_path(File.join(content_directory, repository.folder_name))

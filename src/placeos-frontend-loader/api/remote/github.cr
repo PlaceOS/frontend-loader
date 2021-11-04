@@ -5,9 +5,10 @@ module PlaceOS::FrontendLoader
     class Github < Remote
       # repo name e.g. PlaceOS/Core
       def initialize(@ref : String, @folder_name : String)
-        uri = "https://api.github.com/repos/#{@ref}/commits"
-        response = HTTP::Client.get uri
-        raise Exception.new("Repo #{@ref} is incorrect or does not exsist") unless response.status_code == 200
+        stdout = IO::Memory.new
+        Process.new("git", ["ls-remote", "https://github.com/#{@ref}"], output: stdout).wait
+        output = stdout.to_s
+        raise Exception.new("Repo #{@ref} is incorrect or does not exsist") if output.includes?("not found")
       end
 
       TAR_NAME = "temp.tar.gz"
@@ -112,18 +113,18 @@ module PlaceOS::FrontendLoader
 
       def download_file(url, dest)
         HTTP::Client.get(url) do |redirect_response|
-          raise "status_code for #{url} was #{redirect_response.status_code}" unless (redirect_response.success? || redirect_response.status_code == 302)
+          raise HTTP::Server::ClientError.new("status_code for #{url} was #{redirect_response.status_code}") unless (redirect_response.success? || redirect_response.status_code == 302)
           HTTP::Client.get(redirect_response.headers["location"]) do |response|
             File.write(dest, response.body_io)
           end
         end
         File.new(dest)
-      rescue ex : Exception
+      rescue ex : File::Error | HTTP::Server::ClientError
         Log.error(exception: ex) { "Could not download file at URL: #{ex.message}" }
       end
 
       def extract_file(tar_name, dest_path)
-        raise Exception.new("File #{tar_name} does not exist") unless File.exists?(Path.new(tar_name))
+        raise File::NotFoundError.new(message: "File #{tar_name} does not exist", file: tar_name) unless File.exists?(Path.new(tar_name))
         if !Dir.exists?(Path.new(["./", dest_path]))
           File.open(tar_name) do |file|
             begin
@@ -140,7 +141,7 @@ module PlaceOS::FrontendLoader
                   end
                 end
               end
-            rescue ex : Exception
+            rescue ex : File::Error | Compress::Gzip::Error
               Log.error(exception: ex) { "Could not unzip tar" }
             end
           end
