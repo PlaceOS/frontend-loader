@@ -14,12 +14,14 @@ x-rethinkdb-client-env: &rethinkdb-client-env
 
 services:
   test: # Frontends
-    build:
-      context: ./
-      dockerfile: Dockerfile.test
+    image: placeos/service-spec-runner:${CRYSTAL_VERSION:-1.2.1}
     volumes:
-      - ./spec:/app/spec
-      - ./src:/app/src
+      - ${PWD}/spec:/app/spec
+      - ${PWD}/src:/app/src
+      - ${PWD}/lib:/app/lib
+      - ${PWD}/shard.lock:/app/shard.lock
+      - ${PWD}/shard.yml:/app/shard.yml
+      - ${PWD}/coverage:/app/coverage
     depends_on:
       - rethink
     environment:
