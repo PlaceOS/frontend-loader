@@ -18,7 +18,7 @@ module PlaceOS::FrontendLoader
     private alias Git = PlaceOS::Compiler::Git
     TAR_NAME = "temp.tar.gz"
 
-    property last_loaded : Remote = Remote::Github.new("PlaceOS/www-core", WWW)
+    getter github_actioner : Remote::GithubActioner = Remote::GithubActioner.new
 
     Habitat.create do
       setting content_directory : String = WWW
@@ -60,8 +60,9 @@ module PlaceOS::FrontendLoader
     # Frontend loader implicitly and idempotently creates a base www
     protected def create_base_www
       content_directory_parent = Path[content_directory].parent.to_s
-      last_loaded = Remote::Github.new("PlaceOS/www-core", content_directory)
-      last_loaded.download(repository_folder_name: content_directory, content_directory: content_directory_parent, branch: "master")
+      base_ref = GitHubRef.new("PlaceOS/www-core", "master")
+      base_ref.set_hash
+      github_actioner.download(repository_folder_name: content_directory, content_directory: content_directory_parent, ref: base_ref)
     end
 
     protected def start_update_cron : Nil
@@ -95,6 +96,7 @@ module PlaceOS::FrontendLoader
         Loader.load(
           repository: repository,
           content_directory: @content_directory,
+          actioner: @github_actioner
         )
       in Action::Deleted
         # Unload the repository
@@ -110,7 +112,8 @@ module PlaceOS::FrontendLoader
 
     def self.load(
       repository : Model::Repository,
-      content_directory : String
+      content_directory : String,
+      actioner : Remote::GithubActioner
     )
       branch = repository.branch
       # username = repository.username || Loader.settings.username
@@ -118,16 +121,24 @@ module PlaceOS::FrontendLoader
       repository_commit = repository.commit_hash
       content_directory = File.expand_path(content_directory)
       repository_directory = File.expand_path(File.join(content_directory, repository.folder_name))
-
       if repository.uri_changed? && Dir.exists?(repository_directory)
         # Reload the repository to prevent conflicting histories
         unload(repository, content_directory)
       end
 
-      hash = repository.should_pull? ? "HEAD" : repository.commit_hash
+      hash = repository.should_pull? ? "HEAD" : repository.commit_hash # TO DO???
+
       # Download and extract the repository at given branch or commit
-      last_loaded = Remote::Github.new(repository.uri.partition(".com/")[2], repository.folder_name)
-      last_loaded.download(repository_folder_name: repository.folder_name, repository_commit: hash, content_directory: content_directory, branch: branch)
+      ref = GitHubRef.new(repository.uri.partition(".com/")[2], "master")
+
+      if repository_commit.nil? || repository_commit == "HEAD"
+        ref.set_hash
+      else
+        ref.hash = repository_commit
+      end
+
+      # add to remote manger
+      actioner.download(repository_folder_name: repository.folder_name, content_directory: content_directory, ref: ref, branch: branch)
 
       # Grab commit for the downloaded/extracted repository
       checked_out_commit = Api::Repositories.current_commit(repository_directory)

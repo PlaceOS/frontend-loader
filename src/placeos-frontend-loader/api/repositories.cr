@@ -25,11 +25,8 @@ module PlaceOS::FrontendLoader::Api
     end
 
     def self.commits(folder : String, branch : String, count : Int32 = 50, loader : Loader = Loader.instance)
-      unless loaded?(folder)
-        repo = File.read(Path.new([loader.content_directory, folder, "current_repo.txt"]))
-        loader.last_loaded = Remote::Github.new(repo, folder)
-      end
-      loader.last_loaded.commits(branch)[0...count]
+      repo = File.read(Path.new([loader.content_directory, folder, "current_repo.txt"]))
+      loader.github_actioner.commits(repo, branch)[0...count]
     rescue e
       Log.error(exception: e) { "failed to fetch commmits: #{e.message}" }
       nil
@@ -46,11 +43,8 @@ module PlaceOS::FrontendLoader::Api
     end
 
     def self.branches(folder, loader : Loader = Loader.instance)
-      unless loaded?(folder)
-        repo = File.read(Path.new([loader.content_directory, folder, "current_repo.txt"]))
-        loader.last_loaded = Remote::Github.new(repo, folder)
-      end
-      loader.last_loaded.branches.keys.sort!.uniq!
+      repo = File.read(Path.new([loader.content_directory, folder, "current_repo.txt"]))
+      loader.github_actioner.branches(repo).keys.sort!.uniq!
     rescue e
       Log.error(exception: e) { "failed to fetch branches for #{folder}" }
       nil
