@@ -39,6 +39,9 @@ dependencies:
   crystar:
     github: naqvis/crystar
 
+  hash_file:
+    github: tassja/hash_file
+
 development_dependencies:
   ameba:
     github: crystal-ameba/ameba

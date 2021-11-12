@@ -1,5 +1,6 @@
 require "digest/sha1"
 require "placeos-compiler/git"
+require "hash_file"
 
 require "./base"
 require "../loader"
@@ -25,7 +26,8 @@ module PlaceOS::FrontendLoader::Api
     end
 
     def self.commits(folder : String, branch : String, count : Int32 = 50, loader : Loader = Loader.instance)
-      repo = File.read(Path.new([loader.content_directory, folder, "current_repo.txt"]))
+      HashFile.config({"base_dir" => "#{loader.content_directory}/#{folder}/metadata"})
+      repo = HashFile["current_repo"].to_s
       loader.github_actioner.commits(repo, branch)[0...count]
     rescue e
       Log.error(exception: e) { "failed to fetch commmits: #{e.message}" }
@@ -43,7 +45,8 @@ module PlaceOS::FrontendLoader::Api
     end
 
     def self.branches(folder, loader : Loader = Loader.instance)
-      repo = File.read(Path.new([loader.content_directory, folder, "current_repo.txt"]))
+      HashFile.config({"base_dir" => "#{loader.content_directory}/#{folder}/metadata"})
+      repo = HashFile["current_repo"].to_s
       loader.github_actioner.branches(repo).keys.sort!.uniq!
     rescue e
       Log.error(exception: e) { "failed to fetch branches for #{folder}" }
@@ -70,20 +73,23 @@ module PlaceOS::FrontendLoader::Api
           File.directory?(path)
         }
         .each_with_object({} of String => String) { |folder_name, hash|
-          hash[folder_name] = Api::Repositories.current_commit(Path.new([content_directory, folder_name]))
+          hash[folder_name] = Api::Repositories.current_commit(Path.new([content_directory, folder_name]).to_s)
         }
     end
 
-    def self.current_branch(repository_path)
-      File.read(Path.new([repository_path, "current_branch.txt"])).strip
+    def self.current_branch(repository_path : String)
+      HashFile.config({"base_dir" => "#{repository_path}/metadata"})
+      HashFile["current_branch"].to_s.strip
     end
 
-    def self.current_commit(repository_path)
-      File.read(Path.new([repository_path, "current_hash.txt"])).strip
+    def self.current_commit(repository_path : String)
+      HashFile.config({"base_dir" => "#{repository_path}/metadata"})
+      HashFile["current_hash"].to_s.strip
     end
 
-    def self.current_repo(repository_path)
-      File.read(Path.new([repository_path, "current_repo.txt"])).strip
+    def self.current_repo(repository_path : String)
+      HashFile.config({"base_dir" => "#{repository_path}/metadata"})
+      HashFile["current_repo"].to_s.strip
     end
   end
 end

@@ -129,13 +129,7 @@ module PlaceOS::FrontendLoader
       hash = repository.should_pull? ? "HEAD" : repository.commit_hash # TO DO???
 
       # Download and extract the repository at given branch or commit
-      ref = GitHubRef.new(repository.uri.partition(".com/")[2], "master")
-
-      if repository_commit.nil? || repository_commit == "HEAD"
-        ref.set_hash
-      else
-        ref.hash = repository_commit
-      end
+      ref = GitHubRef.new(repository.uri.split(".com/").last, branch: "master", hash: hash)
 
       # add to remote manger
       actioner.download(repository_folder_name: repository.folder_name, content_directory: content_directory, ref: ref, branch: branch)

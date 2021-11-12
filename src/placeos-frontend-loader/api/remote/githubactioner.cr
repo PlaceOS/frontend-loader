@@ -1,14 +1,16 @@
+require "hash_file"
+
 module PlaceOS::FrontendLoader
   struct GitHubRef
     include JSON::Serializable
     property repo_name : String
     property branch : String
     # property tag : String
-    property hash : String = "HEAD" # also a GitHub commit
-    property parent : String = "./"
+    property hash : String # also a GitHub commit
+    # property parent : String = "./" ??
 
-    def initialize(@repo_name : String, @branch : String? = "master", @tag : String? = nil)
-      # if @hash == "HEAD"
+    def initialize(@repo_name : String, @branch : String? = "master", @tag : String? = nil, @hash : String? = "HEAD")
+      self.set_hash if (@hash.nil? || @hash == "HEAD")
     end
 
     def github_url
@@ -191,14 +193,10 @@ module PlaceOS::FrontendLoader
       end
 
       private def save_metadata(path : Path, hash : String, repository_uri : String, branch : String)
-        hash_path = Path.new([path, "current_hash.txt"])
-        puts hash_path
-        File.write(hash_path, hash)
-        repo_path = Path.new([path, "current_repo.txt"])
-        repo = repository_uri.partition(".com/")[2]
-        File.write(repo_path, repo)
-        branch_path = Path.new([path, "current_branch.txt"])
-        File.write(branch_path, branch)
+        HashFile.config({"base_dir" => "#{path.to_s}/metadata"})
+        HashFile["current_hash"] = hash
+        HashFile["current_repo"] = repository_uri.split(".com/").last
+        HashFile["current_branch"] = branch
       end
     end
   end

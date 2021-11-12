@@ -73,6 +73,10 @@ shards:
     git: https://github.com/luckyframework/habitat.git
     version: 0.4.7
 
+  hash_file:
+    git: https://github.com/tassja/hash_file.git
+    version: 0.4
+
   hound-dog:
     git: https://github.com/place-labs/hound-dog.git
     version: 2.9.0
