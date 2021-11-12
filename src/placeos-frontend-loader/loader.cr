@@ -59,10 +59,8 @@ module PlaceOS::FrontendLoader
 
     # Frontend loader implicitly and idempotently creates a base www
     protected def create_base_www
-      content_directory_parent = Path[content_directory].parent.to_s
-      base_ref = GitHubRef.new("PlaceOS/www-core", "master")
-      base_ref.set_hash
-      github_actioner.download(repository_folder_name: content_directory, content_directory: content_directory_parent, ref: base_ref)
+      base_ref = GitHubRef.new("PlaceOS/www-core", "master", repo_path: File.expand_path(content_directory))
+      github_actioner.download(ref: base_ref)
     end
 
     protected def start_update_cron : Nil
@@ -121,6 +119,7 @@ module PlaceOS::FrontendLoader
       repository_commit = repository.commit_hash
       content_directory = File.expand_path(content_directory)
       repository_directory = File.expand_path(File.join(content_directory, repository.folder_name))
+
       if repository.uri_changed? && Dir.exists?(repository_directory)
         # Reload the repository to prevent conflicting histories
         unload(repository, content_directory)
@@ -129,10 +128,10 @@ module PlaceOS::FrontendLoader
       hash = repository.should_pull? ? "HEAD" : repository.commit_hash # TO DO???
 
       # Download and extract the repository at given branch or commit
-      ref = GitHubRef.new(repository.uri.split(".com/").last, branch: "master", hash: hash)
+      ref = GitHubRef.new(repository.uri.split(".com/").last, branch: "master", hash: hash, repo_path: repository_directory)
 
       # add to remote manger
-      actioner.download(repository_folder_name: repository.folder_name, content_directory: content_directory, ref: ref, branch: branch)
+      actioner.download(ref: ref, branch: branch)
 
       # Grab commit for the downloaded/extracted repository
       checked_out_commit = Api::Repositories.current_commit(repository_directory)

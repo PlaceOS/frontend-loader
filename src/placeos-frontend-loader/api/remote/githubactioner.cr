@@ -7,9 +7,9 @@ module PlaceOS::FrontendLoader
     property branch : String
     # property tag : String
     property hash : String # also a GitHub commit
-    # property parent : String = "./" ??
+    property repo_path : String
 
-    def initialize(@repo_name : String, @branch : String? = "master", @tag : String? = nil, @hash : String? = "HEAD")
+    def initialize(@repo_name : String, @branch : String? = "master", @tag : String? = nil, @hash : String? = "HEAD", @repo_path = "/")
       self.set_hash if (@hash.nil? || @hash == "HEAD")
     end
 
@@ -127,13 +127,12 @@ module PlaceOS::FrontendLoader
       end
 
       def download(
-        repository_folder_name : String,
-        content_directory : String,
-        ref : GitHubRef, # has choosen branch, commit etc
+        ref : GitHubRef,
         branch : String? = "master"
       )
         repository_uri = ref.github_url
 
+        repository_folder_name = ref.repo_path.split("/").last
         Git.repository_lock(repository_folder_name).write do
           Log.info { {
             message:    "downloading repository",
@@ -145,9 +144,8 @@ module PlaceOS::FrontendLoader
           begin
             archive_url = "https://github.com/#{ref.repo_name}/archive/#{ref.hash}.tar.gz"
             download_archive(archive_url)
-            dest_path = Path.new([content_directory, repository_folder_name])
-            extract_archive(dest_path)
-            save_metadata(dest_path, ref.hash, repository_uri, branch)
+            extract_archive(ref.repo_path)
+            save_metadata(ref.repo_path, ref.hash, repository_uri, branch)
           rescue ex : KeyError | File::Error
             Log.error(exception: ex) { "Could not download repository: #{ex.message}" }
           end
@@ -192,8 +190,8 @@ module PlaceOS::FrontendLoader
         File.delete(TAR_NAME)
       end
 
-      private def save_metadata(path : Path, hash : String, repository_uri : String, branch : String)
-        HashFile.config({"base_dir" => "#{path.to_s}/metadata"})
+      private def save_metadata(repo_path : String, hash : String, repository_uri : String, branch : String)
+        HashFile.config({"base_dir" => "#{repo_path}/metadata"})
         HashFile["current_hash"] = hash
         HashFile["current_repo"] = repository_uri.split(".com/").last
         HashFile["current_branch"] = branch
