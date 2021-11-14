@@ -1,29 +1,33 @@
 require "hash_file"
 
 module PlaceOS::FrontendLoader
-  struct GitHubRef
+  struct GitLabRef
     include JSON::Serializable
     property repo_name : String
     property branch : String
-    # property tag : String
+    property tag : String
     property hash : String # also a GitHub commit
     property repo_path : String
 
     def initialize(@repo_name : String, @branch : String? = "master", @tag : String? = nil, @hash : String? = "HEAD", @repo_path : String = "/")
-      self.set_hash if @hash == "HEAD"
+      self.set_hash
     end
 
-    def github_url
-      "https://github.com/#{repo_name}"
+    def gitlab_url
+      "https://gitlab.com/#{repo_name}"
+    end
+
+    def repo_encoded
+      repo.gsub("/", "%2F")
     end
 
     def set_hash
       if !@tag.nil?
-        hash = get_hash_by_tag(self.github_url, @branch)
+        hash = get_hash_by_tag
       elsif branch != "master"
-        hash = get_hash_by_branch(self.github_url, @branch)
+        hash = get_hash_by_branch
       else
-        hash = get_hash_head(self.github_url)
+        hash = get_hash_head
       end
       @hash = hash.not_nil!
     end
@@ -41,27 +45,28 @@ module PlaceOS::FrontendLoader
       ref_hash
     end
 
-    private def get_hash_head(repo_url : String)
-      ref_hash = get_hashes(repo_url)
-      ref_hash.has_key?("HEAD") ? ref_hash["HEAD"] : ref_hash.first_key?
+    private def get_hash_head
+      commits = GitLabActioner.commits(self.repo_name)
+      raise Enumerable::EmptyError.new("No commits found for repo: #{self.repo_name}") if commits.empty?
+      commits.first.commit
     end
 
-    private def get_hash_by_branch(repo_url : String, branch : String)
-      ref_hash = get_hashes(repo_url)
-      raise KeyError.new("Branch #{branch} does not exist in repo") unless ref_hash.has_key?("refs/heads/#{branch}")
-      ref_hash["refs/heads/#{branch}"]
+    private def get_hash_by_branch
+      commits_by_branch = GitLabActioner.branches(self.repo_name)
+      raise KeyError.new("Branch #{@branch} does not exist in repo") unless commits_by_branch.has_key?(@branch)
+      commits_by_branch[@branch]
     end
 
     # tag = "1.9.0"
-    private def get_hash_by_tag(repo_url : String, tag : String)
-      ref_hash = get_hashes(repo_url)
-      raise KeyError.new("Tag #{tag} does not exist in repo") unless ref_hash.has_key?("refs/tags/v#{tag}")
-      ref_hash["refs/tags/v#{tag}"]
+    private def get_hash_by_tag
+      commits_by_release = GitLabActioner.releases(self.repo_name)
+      raise KeyError.new("Tag #{@tag} does not exist in repo") unless commits_by_release.has_key?(@tag)
+      commits_by_release[@tag]
     end
   end
 
   abstract class PlaceOS::FrontendLoader::Remote
-    class GithubActioner
+    class GitLabActioner
       def initialize
       end
 
@@ -78,35 +83,34 @@ module PlaceOS::FrontendLoader
         end
       end
 
-      # repostiory class?
       # Returns the branches for a given repo
       def branches(repo : String) : Hash(String, String)
-        uri = "https://api.github.com/repos/#{repo}/branches"
+        uri = "https://gitlab.com/api/v4/projects/#{repo.gsub("/", "%2F")}/repository/branches"
         response = HTTP::Client.get uri
         raise Exception.new("status_code for #{uri} was #{response.status_code}") unless (response.success? || response.status_code == 302)
         parsed = JSON.parse(response.body).as_a
         branches = Hash(String, String).new
         parsed.each do |value|
           next if value =~ /HEAD/
-          branch_name = value["name"].to_s.strip.lchop("origin/")
-          branches[branch_name] = value["commit"]["sha"].to_s
+          branch_name = value["name"].to_s
+          branches[branch_name] = value["commit"]["id"].to_s
         end
         branches
       end
 
       # Returns the commits for a given repo on specified branch
-      def commits(repo : String, branch : String) : Array(Commit)
-        url = "https://api.github.com/repos/#{repo}/commits?sha=#{branch}"
+      def commits(repo : String, branch : String = "master") : Array(Commit)
+        url = "https://gitlab.com/api/v4/projects/#{repo.gsub("/", "%2F")}/repository/commits?ref_name=#{branch}"
         response = HTTP::Client.get url
         raise Exception.new("status_code for #{url} was #{response.status_code}") unless (response.success? || response.status_code == 302)
         commits = Array(Commit).new
         parsed = JSON.parse(response.body).as_a
         parsed.each do |value|
           commit = Commit.new(
-            commit: value["sha"].as_s,
-            date: value["commit"]["author"]["date"].as_s,
-            author: value["commit"]["author"]["name"].as_s,
-            subject: value["commit"]["message"].as_s.strip(%(\n))
+            commit: value["id"].as_s,
+            date: value["authored_date"].as_s,
+            author: value["author_email"].as_s,
+            subject: value["title"].as_s
           )
           commits << commit
         end
@@ -114,14 +118,15 @@ module PlaceOS::FrontendLoader
       end
 
       # Returns the release tags for a given repo
-      def releases(repo : String) : Array(String)
-        url = "https://api.github.com/repos/#{repo}/releases"
+      def releases(repo : String) : Hash(String, String)
+        url = "https://gitlab.com/api/v4/projects/#{repo.gsub("/", "%2F")}/releases"
         response = HTTP::Client.get url
         raise Exception.new("status_code for #{url} was #{response.status_code}") unless (response.success? || response.status_code == 302)
-        tags = Array(String).new
+        tags = Hash(String, String).new
         parsed = JSON.parse(response.body).as_a
         parsed.each do |value|
-          tags << value["tag_name"].as_s
+          tag_name = value["tag_name"].to_s
+          tags[tag_name] = value["commit"]["id"].to_s
         end
         tags
       end
@@ -130,9 +135,9 @@ module PlaceOS::FrontendLoader
         ref : GitHubRef,
         branch : String? = "master"
       )
-        repository_uri = ref.github_url
-
+        repository_uri = ref.gitlab_url
         repository_folder_name = ref.repo_path.split("/").last
+
         Git.repository_lock(repository_folder_name).write do
           Log.info { {
             message:    "downloading repository",
@@ -142,7 +147,7 @@ module PlaceOS::FrontendLoader
           } }
 
           begin
-            archive_url = "https://github.com/#{ref.repo_name}/archive/#{ref.hash}.tar.gz"
+            archive_url = "https://gitlab.com/api/v4/projects/#{ref.repo_name.gsub("/", "%2F")}/repository/archive.tar.gz?sha=#{commit}"
             download_archive(archive_url)
             extract_archive(ref.repo_path)
             save_metadata(ref.repo_path, ref.hash, repository_uri, branch)
@@ -153,11 +158,9 @@ module PlaceOS::FrontendLoader
       end
 
       def download_archive(url)
-        HTTP::Client.get(url) do |redirect_response|
-          raise HTTP::Server::ClientError.new("status_code for #{url} was #{redirect_response.status_code}") unless (redirect_response.success? || redirect_response.status_code == 302)
-          HTTP::Client.get(redirect_response.headers["location"]) do |response|
-            File.write(TAR_NAME, response.body_io)
-          end
+        HTTP::Client.get(url) do |response|
+          raise Exception.new("status_code for #{url} was #{response.status_code}") unless redirect_response.status_code < 400
+          File.write(TAR_NAME, response.body_io)
         end
         File.new(TAR_NAME)
       rescue ex : File::Error | HTTP::Server::ClientError
