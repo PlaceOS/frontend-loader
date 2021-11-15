@@ -16,9 +16,11 @@ module PlaceOS::FrontendLoader
     Log = ::Log.for(self)
 
     private alias Git = PlaceOS::Compiler::Git
+    private alias Remote = PlaceOS::FrontendLoader::Remote
+
     TAR_NAME = "temp.tar.gz"
 
-    getter github_actioner : Remote::GithubActioner = Remote::GithubActioner.new
+    getter actioner : Remote
 
     Habitat.create do
       setting content_directory : String = WWW
@@ -43,6 +45,7 @@ module PlaceOS::FrontendLoader
       @content_directory : String = Loader.settings.content_directory,
       @update_crontab : String = Loader.settings.update_crontab
     )
+      @actioner = PlaceOS::FrontendLoader::GitHubRemote.new
       super()
     end
 
@@ -59,8 +62,8 @@ module PlaceOS::FrontendLoader
 
     # Frontend loader implicitly and idempotently creates a base www
     protected def create_base_www
-      base_ref = GitHubRef.new("PlaceOS/www-core", "master", repo_path: File.expand_path(content_directory))
-      github_actioner.download(ref: base_ref)
+      base_ref = Remote::Reference.new("PlaceOS/www-core", "master", repo_path: File.expand_path(content_directory))
+      actioner.download(ref: base_ref)
     end
 
     protected def start_update_cron : Nil
@@ -94,7 +97,7 @@ module PlaceOS::FrontendLoader
         Loader.load(
           repository: repository,
           content_directory: @content_directory,
-          actioner: @github_actioner
+          actioner: @actioner
         )
       in Action::Deleted
         # Unload the repository
@@ -111,7 +114,7 @@ module PlaceOS::FrontendLoader
     def self.load(
       repository : Model::Repository,
       content_directory : String,
-      actioner : Remote::GithubActioner
+      actioner : Remote
     )
       branch = repository.branch
       # username = repository.username || Loader.settings.username
@@ -128,10 +131,10 @@ module PlaceOS::FrontendLoader
       hash = repository.should_pull? ? "HEAD" : repository.commit_hash # TO DO???
 
       # Download and extract the repository at given branch or commit
-      ref = GitHubRef.new(repository.uri.split(".com/").last, branch: "master", hash: hash, repo_path: repository_directory)
+      ref = Remote::Reference.new(repository.uri.split(".com/").last, branch: "master", hash: hash, repo_path: repository_directory)
 
       # add to remote manger
-      actioner.download(ref: ref, branch: branch)
+      actioner.download(ref: ref, hash: hash, branch: branch)
 
       # Grab commit for the downloaded/extracted repository
       checked_out_commit = Api::Repositories.current_commit(repository_directory)

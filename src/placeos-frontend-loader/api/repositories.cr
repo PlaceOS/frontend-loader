@@ -28,7 +28,7 @@ module PlaceOS::FrontendLoader::Api
     def self.commits(folder : String, branch : String, count : Int32 = 50, loader : Loader = Loader.instance)
       HashFile.config({"base_dir" => "#{loader.content_directory}/#{folder}/metadata"})
       repo = HashFile["current_repo"].to_s
-      loader.github_actioner.commits(repo, branch)[0...count]
+      loader.actioner.commits(repo, branch)[0...count]
     rescue e
       Log.error(exception: e) { "failed to fetch commmits: #{e.message}" }
       nil
@@ -47,7 +47,7 @@ module PlaceOS::FrontendLoader::Api
     def self.branches(folder, loader : Loader = Loader.instance)
       HashFile.config({"base_dir" => "#{loader.content_directory}/#{folder}/metadata"})
       repo = HashFile["current_repo"].to_s
-      loader.github_actioner.branches(repo).keys.sort!.uniq!
+      loader.actioner.branches(repo).keys.sort!.uniq!
     rescue e
       Log.error(exception: e) { "failed to fetch branches for #{folder}" }
       nil
