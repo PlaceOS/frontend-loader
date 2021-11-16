@@ -30,7 +30,7 @@ module PlaceOS::FrontendLoader
       uri = "https://gitlab.com/api/v4/projects/#{encode_repo(repo)}/repository/branches"
       response = HTTP::Client.get uri
       raise Exception.new("status_code for #{uri} was #{response.status_code}") unless response.success?
-      parsed = JSON.parse(response.body).as_a
+      parsed = Array(JSON::Any).from_json(response.body)
       branches = Hash(String, String).new
       parsed.each do |value|
         next if value =~ /HEAD/
@@ -46,7 +46,7 @@ module PlaceOS::FrontendLoader
       response = HTTP::Client.get url
       raise Exception.new("status_code for #{url} was #{response.status_code}") unless response.success?
       commits = Array(Remote::Commit).new
-      parsed = JSON.parse(response.body).as_a
+      parsed = Array(JSON::Any).from_json(response.body)
       parsed.each do |value|
         commit = Remote::Commit.new(
           commit: value["id"].as_s,
@@ -65,7 +65,7 @@ module PlaceOS::FrontendLoader
       response = HTTP::Client.get url
       raise Exception.new("status_code for #{url} was #{response.status_code}") unless response.success?
       tags = Array(String).new
-      parsed = JSON.parse(response.body).as_a
+      parsed = Array(JSON::Any).from_json(response.body)
       parsed.each do |value|
         tags << value["tag_name"].to_s
       end
@@ -80,10 +80,11 @@ module PlaceOS::FrontendLoader
       ref : Remote::Reference,
       branch : String? = "master",
       hash : String? = "HEAD",
-      tag : String? = "latest"
+      tag : String? = "latest",
+      path : String? = ref.repo_path
     )
       repository_uri = url(ref.repo_name)
-      repository_folder_name = ref.repo_path.split("/").last
+      repository_folder_name = path.split("/").last
 
       if tag != "latest"
         hash = get_hash_by_tag(ref.repo_name, tag)
@@ -103,12 +104,11 @@ module PlaceOS::FrontendLoader
         } }
 
         begin
-          puts "repo name is: #{ref.repo_name}"
           repo_encoded = ref.repo_name.gsub("/", "%2F")
           archive_url = "https://gitlab.com/api/v4/projects/#{repo_encoded}/repository/archive.tar.gz?sha=#{hash}"
           download_archive(archive_url)
-          extract_archive(ref.repo_path)
-          save_metadata(ref.repo_path, hash, ref.repo_name, branch)
+          extract_archive(path)
+          save_metadata(path, hash, ref.repo_name, branch)
         rescue ex : KeyError | File::Error
           Log.error(exception: ex) { "Could not download repository: #{ex.message}" }
         end
@@ -139,7 +139,7 @@ module PlaceOS::FrontendLoader
       response = HTTP::Client.get url
       raise Exception.new("status_code for #{url} was #{response.status_code}") unless response.success?
       tags = Hash(String, String).new
-      parsed = JSON.parse(response.body).as_a
+      parsed = Array(JSON::Any).from_json(response.body)
       parsed.each do |value|
         tag_name = value["tag_name"].to_s
         tags[tag_name] = value["commit"]["id"].to_s

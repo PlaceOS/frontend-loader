@@ -2,7 +2,7 @@ require "hash_file"
 require "./remote"
 
 module PlaceOS::FrontendLoader
-  class GitHubRemote < PlaceOS::FrontendLoader::Remote
+  class GitHubRemote < Remote
     def initialize
     end
 
@@ -15,7 +15,7 @@ module PlaceOS::FrontendLoader
       uri = "https://api.github.com/repos/#{repo}/branches"
       response = HTTP::Client.get uri
       raise Exception.new("status_code for #{uri} was #{response.status_code}") unless (response.success? || response.status_code == 302)
-      parsed = JSON.parse(response.body).as_a
+      parsed = Array(JSON::Any).from_json(response.body)
       branches = Hash(String, String).new
       parsed.each do |value|
         next if value =~ /HEAD/
@@ -31,7 +31,7 @@ module PlaceOS::FrontendLoader
       response = HTTP::Client.get url
       raise Exception.new("status_code for #{url} was #{response.status_code}") unless (response.success? || response.status_code == 302)
       commits = Array(Remote::Commit).new
-      parsed = JSON.parse(response.body).as_a
+      parsed = Array(JSON::Any).from_json(response.body)
       parsed.each do |value|
         commit = Commit.new(
           commit: value["sha"].as_s,
@@ -50,7 +50,7 @@ module PlaceOS::FrontendLoader
       response = HTTP::Client.get url
       raise Exception.new("status_code for #{url} was #{response.status_code}") unless (response.success? || response.status_code == 302)
       tags = Array(String).new
-      parsed = JSON.parse(response.body).as_a
+      parsed = Array(JSON::Any).from_json(response.body)
       parsed.each do |value|
         tags << value["tag_name"].as_s
       end
@@ -65,10 +65,11 @@ module PlaceOS::FrontendLoader
       ref : Remote::Reference,
       branch : String? = "master",
       hash : String? = "HEAD",
-      tag : String? = "latest"
+      tag : String? = "latest",
+      path : String? = ref.repo_path
     )
       repository_uri = url(ref.repo_name)
-      repository_folder_name = ref.repo_path.split("/").last
+      repository_folder_name = path.split("/").last
 
       if hash == "HEAD" || hash.nil?
         if tag != "latest"
@@ -92,15 +93,15 @@ module PlaceOS::FrontendLoader
         begin
           archive_url = "https://github.com/#{ref.repo_name}/archive/#{hash}.tar.gz"
           download_archive(archive_url)
-          extract_archive(ref.repo_path)
-          save_metadata(ref.repo_path, hash, repository_uri, branch)
+          extract_archive(path)
+          save_metadata(path, hash, repository_uri, branch)
         rescue ex : KeyError | File::Error
           Log.error(exception: ex) { "Could not download repository: #{ex.message}" }
         end
       end
     end
 
-    private def get_hashes(repo_url : String)
+    private def get_commit_hashes(repo_url : String)
       stdout = IO::Memory.new
       Process.new("git", ["ls-remote", repo_url], output: stdout).wait
       output = stdout.to_s.split('\n')
@@ -111,19 +112,19 @@ module PlaceOS::FrontendLoader
     end
 
     private def get_hash_head(repo_url : String)
-      ref_hash = get_hashes(repo_url)
+      ref_hash = get_commit_hashes(repo_url)
       ref_hash.has_key?("HEAD") ? ref_hash["HEAD"] : ref_hash.first_key?
     end
 
     private def get_hash_by_branch(repo_url : String, branch : String)
-      ref_hash = get_hashes(repo_url)
+      ref_hash = get_commit_hashes(repo_url)
       raise KeyError.new("Branch #{branch} does not exist in repo") unless ref_hash.has_key?("refs/heads/#{branch}")
       ref_hash["refs/heads/#{branch}"]
     end
 
     # tag = "1.9.0"
     private def get_hash_by_tag(repo_url : String, tag : String)
-      ref_hash = get_hashes(repo_url)
+      ref_hash = get_commit_hashes(repo_url)
       raise KeyError.new("Tag #{tag} does not exist in repo") unless ref_hash.has_key?("refs/tags/v#{tag}")
       ref_hash["refs/tags/v#{tag}"]
     end

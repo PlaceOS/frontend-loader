@@ -23,7 +23,8 @@ module PlaceOS::FrontendLoader
       getter tag : String | Nil
       getter repo_path : String
 
-      def initialize(@repo_name : String, @branch : String? = "master", @tag : String? = nil, @hash : String? = "HEAD", @repo_path : String = "/")
+      def initialize(@url : String, @branch : String? = "master", @tag : String? = nil, @hash : String? = "HEAD", @repo_path : String = "/")
+        @repo_name = @url.split(".com/").last.rstrip("/")
       end
     end
 
@@ -33,6 +34,6 @@ module PlaceOS::FrontendLoader
 
     abstract def releases(repo : String) : Array(String)
 
-    abstract def download(ref : Reference, branch : String? = "master", hash : String? = "HEAD", tag : String? = "latest")
+    abstract def download(ref : Reference, branch : String? = "master", hash : String? = "HEAD", tag : String? = "latest", path : String? = ref.repo_path)
   end
 end

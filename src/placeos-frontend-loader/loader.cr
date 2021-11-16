@@ -131,7 +131,7 @@ module PlaceOS::FrontendLoader
       hash = repository.should_pull? ? "HEAD" : repository.commit_hash # TO DO???
 
       # Download and extract the repository at given branch or commit
-      ref = Remote::Reference.new(repository.uri.split(".com/").last, branch: "master", hash: hash, repo_path: repository_directory)
+      ref = Remote::Reference.new(repository.uri, branch: "master", hash: hash, repo_path: repository_directory)
 
       # add to remote manger
       actioner.download(ref: ref, hash: hash, branch: branch)
