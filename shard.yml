@@ -42,6 +42,9 @@ dependencies:
   hash_file:
     github: tassja/hash_file
 
+  octokit:
+    github: place-labs/octokit.cr
+
 development_dependencies:
   ameba:
     github: crystal-ameba/ameba

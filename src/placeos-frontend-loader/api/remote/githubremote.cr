@@ -1,5 +1,6 @@
 require "hash_file"
 require "./remote"
+require "octokit"
 
 module PlaceOS::FrontendLoader
   class GitHubRemote < Remote
@@ -10,12 +11,14 @@ module PlaceOS::FrontendLoader
 
     TAR_NAME = "temp.tar.gz"
 
+    @client = Octokit.client
+
     # Returns the branches for a given repo
     def branches(repo : String) : Hash(String, String)
       uri = "https://api.github.com/repos/#{repo}/branches"
       response = HTTP::Client.get uri
       raise Exception.new("status_code for #{uri} was #{response.status_code}") unless (response.success? || response.status_code == 302)
-      parsed = Array(JSON::Any).from_json(response.body)
+      parsed = Array(Hash(String, JSON::Any)).from_json(response.body)
       branches = Hash(String, String).new
       parsed.each do |value|
         next if value =~ /HEAD/
@@ -27,17 +30,14 @@ module PlaceOS::FrontendLoader
 
     # Returns the commits for a given repo on specified branch
     def commits(repo : String, branch : String) : Array(Remote::Commit)
-      url = "https://api.github.com/repos/#{repo}/commits?sha=#{branch}"
-      response = HTTP::Client.get url
-      raise Exception.new("status_code for #{url} was #{response.status_code}") unless (response.success? || response.status_code == 302)
+      get_commits = @client.commits(repo, branch)
       commits = Array(Remote::Commit).new
-      parsed = Array(JSON::Any).from_json(response.body)
-      parsed.each do |value|
+      get_commits.fetch_all.each do |comm|
         commit = Commit.new(
-          commit: value["sha"].as_s,
-          date: value["commit"]["author"]["date"].as_s,
-          author: value["commit"]["author"]["name"].as_s,
-          subject: value["commit"]["message"].as_s.strip(%(\n))
+          commit: comm.sha,
+          date: comm.commit.author.date,
+          author: comm.commit.author.name,
+          subject: comm.commit.message,
         )
         commits << commit
       end
@@ -50,7 +50,7 @@ module PlaceOS::FrontendLoader
       response = HTTP::Client.get url
       raise Exception.new("status_code for #{url} was #{response.status_code}") unless (response.success? || response.status_code == 302)
       tags = Array(String).new
-      parsed = Array(JSON::Any).from_json(response.body)
+      parsed = Array(Hash(String, JSON::Any)).from_json(response.body)
       parsed.each do |value|
         tags << value["tag_name"].as_s
       end
@@ -66,7 +66,7 @@ module PlaceOS::FrontendLoader
       branch : String? = "master",
       hash : String? = "HEAD",
       tag : String? = "latest",
-      path : String? = ref.repo_path
+      path : String = "./"
     )
       repository_uri = url(ref.repo_name)
       repository_folder_name = path.split("/").last

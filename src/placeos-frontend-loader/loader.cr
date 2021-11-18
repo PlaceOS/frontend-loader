@@ -62,8 +62,8 @@ module PlaceOS::FrontendLoader
 
     # Frontend loader implicitly and idempotently creates a base www
     protected def create_base_www
-      base_ref = Remote::Reference.new("PlaceOS/www-core", "master", repo_path: File.expand_path(content_directory))
-      actioner.download(ref: base_ref)
+      base_ref = Remote::Reference.new("PlaceOS/www-core", "master")
+      actioner.download(ref: base_ref, path: File.expand_path(content_directory))
     end
 
     protected def start_update_cron : Nil
@@ -128,13 +128,13 @@ module PlaceOS::FrontendLoader
         unload(repository, content_directory)
       end
 
-      hash = repository.should_pull? ? "HEAD" : repository.commit_hash # TO DO???
+      hash = repository.should_pull? ? "HEAD" : repository.commit_hash
 
       # Download and extract the repository at given branch or commit
-      ref = Remote::Reference.new(repository.uri, branch: "master", hash: hash, repo_path: repository_directory)
+      ref = Remote::Reference.new(repository.uri, branch: "master", hash: hash)
 
       # add to remote manger
-      actioner.download(ref: ref, hash: hash, branch: branch)
+      actioner.download(ref: ref, hash: hash, branch: branch, path: repository_directory)
 
       # Grab commit for the downloaded/extracted repository
       checked_out_commit = Api::Repositories.current_commit(repository_directory)

@@ -30,7 +30,7 @@ module PlaceOS::FrontendLoader
       uri = "https://gitlab.com/api/v4/projects/#{encode_repo(repo)}/repository/branches"
       response = HTTP::Client.get uri
       raise Exception.new("status_code for #{uri} was #{response.status_code}") unless response.success?
-      parsed = Array(JSON::Any).from_json(response.body)
+      parsed = Array(Hash(String, JSON::Any)).from_json(response.body)
       branches = Hash(String, String).new
       parsed.each do |value|
         next if value =~ /HEAD/
@@ -46,7 +46,7 @@ module PlaceOS::FrontendLoader
       response = HTTP::Client.get url
       raise Exception.new("status_code for #{url} was #{response.status_code}") unless response.success?
       commits = Array(Remote::Commit).new
-      parsed = Array(JSON::Any).from_json(response.body)
+      parsed = Array(Hash(String, JSON::Any)).from_json(response.body)
       parsed.each do |value|
         commit = Remote::Commit.new(
           commit: value["id"].as_s,
@@ -65,7 +65,7 @@ module PlaceOS::FrontendLoader
       response = HTTP::Client.get url
       raise Exception.new("status_code for #{url} was #{response.status_code}") unless response.success?
       tags = Array(String).new
-      parsed = Array(JSON::Any).from_json(response.body)
+      parsed = Array(Hash(String, JSON::Any)).from_json(response.body)
       parsed.each do |value|
         tags << value["tag_name"].to_s
       end
@@ -81,7 +81,7 @@ module PlaceOS::FrontendLoader
       branch : String? = "master",
       hash : String? = "HEAD",
       tag : String? = "latest",
-      path : String? = ref.repo_path
+      path : String = "./"
     )
       repository_uri = url(ref.repo_name)
       repository_folder_name = path.split("/").last
@@ -139,7 +139,7 @@ module PlaceOS::FrontendLoader
       response = HTTP::Client.get url
       raise Exception.new("status_code for #{url} was #{response.status_code}") unless response.success?
       tags = Hash(String, String).new
-      parsed = Array(JSON::Any).from_json(response.body)
+      parsed = Array(Hash(String, JSON::Any)).from_json(response.body)
       parsed.each do |value|
         tag_name = value["tag_name"].to_s
         tags[tag_name] = value["commit"]["id"].to_s

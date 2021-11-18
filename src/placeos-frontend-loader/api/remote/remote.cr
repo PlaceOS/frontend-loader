@@ -7,10 +7,10 @@ module PlaceOS::FrontendLoader
 
     struct Commit
       include JSON::Serializable
-      property commit : String
-      property date : String
-      property author : String
-      property subject : String
+      getter commit : String
+      getter date : String
+      getter author : String
+      getter subject : String
 
       def initialize(@commit, @date, @author, @subject)
       end
@@ -21,9 +21,8 @@ module PlaceOS::FrontendLoader
       getter repo_name : String
       getter branch : String
       getter tag : String | Nil
-      getter repo_path : String
 
-      def initialize(@url : String, @branch : String? = "master", @tag : String? = nil, @hash : String? = "HEAD", @repo_path : String = "/")
+      def initialize(@url : String, @branch : String? = "master", @tag : String? = nil, @hash : String? = "HEAD")
         @repo_name = @url.split(".com/").last.rstrip("/")
       end
     end
@@ -34,6 +33,6 @@ module PlaceOS::FrontendLoader
 
     abstract def releases(repo : String) : Array(String)
 
-    abstract def download(ref : Reference, branch : String? = "master", hash : String? = "HEAD", tag : String? = "latest", path : String? = ref.repo_path)
+    abstract def download(ref : Reference, branch : String? = "master", hash : String? = "HEAD", tag : String? = "latest", path : String = "./")
   end
 end
