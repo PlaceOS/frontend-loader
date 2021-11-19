@@ -11,26 +11,22 @@ module PlaceOS::FrontendLoader
 
     TAR_NAME = "temp.tar.gz"
 
-    @client = Octokit.client
+    @github_client = Octokit.client
 
     # Returns the branches for a given repo
     def branches(repo : String) : Hash(String, String)
-      uri = "https://api.github.com/repos/#{repo}/branches"
-      response = HTTP::Client.get uri
-      raise Exception.new("status_code for #{uri} was #{response.status_code}") unless (response.success? || response.status_code == 302)
-      parsed = Array(Hash(String, JSON::Any)).from_json(response.body)
+      get_branches = @github_client.branches(repo)
       branches = Hash(String, String).new
-      parsed.each do |value|
-        next if value =~ /HEAD/
-        branch_name = value["name"].to_s.strip.lchop("origin/")
-        branches[branch_name] = value["commit"]["sha"].to_s
+      get_branches.fetch_all.each do |branch|
+        next if branch =~ /HEAD/
+        branches[branch.name] = branch.commit.sha
       end
       branches
     end
 
     # Returns the commits for a given repo on specified branch
     def commits(repo : String, branch : String) : Array(Remote::Commit)
-      get_commits = @client.commits(repo, branch)
+      get_commits = @github_client.commits(repo, branch)
       commits = Array(Remote::Commit).new
       get_commits.fetch_all.each do |comm|
         commit = Commit.new(
@@ -46,14 +42,9 @@ module PlaceOS::FrontendLoader
 
     # Returns the release tags for a given repo
     def releases(repo : String) : Array(String)
-      url = "https://api.github.com/repos/#{repo}/releases"
-      response = HTTP::Client.get url
-      raise Exception.new("status_code for #{url} was #{response.status_code}") unless (response.success? || response.status_code == 302)
+      get_tags = @github_client.tags(repo)
       tags = Array(String).new
-      parsed = Array(Hash(String, JSON::Any)).from_json(response.body)
-      parsed.each do |value|
-        tags << value["tag_name"].as_s
-      end
+      get_tags.fetch_all.each { |tag| tags << tag.name }
       tags
     end
 

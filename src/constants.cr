@@ -20,6 +20,8 @@ module PlaceOS::FrontendLoader
   GIT_USER = ENV["PLACE_LOADER_GIT_USER"]?
   GIT_PASS = ENV["PLACE_LOADER_GIT_PASS"]?
 
+  GIT_LAB_TOKEN = ENV["GIT_LAB_TOKEN"]? || ""
+
   # NOTE:: following used in `./placeos-frontend-loader/client.cr`
   # URI.parse(ENV["PLACE_LOADER_URI"]? || "http://127.0.0.1:3000")
   # Independent of this file as used in other projects

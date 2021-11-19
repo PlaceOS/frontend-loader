@@ -44,6 +44,10 @@ dependencies:
 
   octokit:
     github: place-labs/octokit.cr
+    version: ~> 0.1.1
+
+  gitlab:
+    github: icyleaf/gitlab.cr
 
 development_dependencies:
   ameba:

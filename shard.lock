@@ -69,6 +69,10 @@ shards:
     git: https://github.com/crystal-community/future.cr.git
     version: 1.0.0
 
+  gitlab:
+    git: https://github.com/icyleaf/gitlab.cr.git
+    version: 0.7.0
+
   habitat:
     git: https://github.com/luckyframework/habitat.git
     version: 0.4.7
@@ -119,7 +123,7 @@ shards:
 
   octokit:
     git: https://github.com/place-labs/octokit.cr.git
-    version: 0.1.0
+    version: 0.1.1
 
   openssl_ext:
     git: https://github.com/spider-gazelle/openssl_ext.git

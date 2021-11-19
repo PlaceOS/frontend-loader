@@ -1,5 +1,6 @@
 require "hash_file"
 require "./remote"
+require "gitlab"
 
 module PlaceOS::FrontendLoader
   class GitLabRemote < PlaceOS::FrontendLoader::Remote
@@ -9,6 +10,8 @@ module PlaceOS::FrontendLoader
     private alias Remote = PlaceOS::FrontendLoader::Remote
 
     TAR_NAME = "temp.tar.gz"
+
+    @gitlab_client = Gitlab.client("https://gitlab.com/api/v4", GIT_LAB_TOKEN)
 
     struct Commit
       include JSON::Serializable
@@ -21,19 +24,17 @@ module PlaceOS::FrontendLoader
       end
     end
 
-    def encode_repo(repo_name : String)
-      repo_name.gsub("/", "%2F")
+    def get_repo_id(repo_name : String)
+      repo = URI.encode_www_form(repo_name)
+      @gitlab_client.project(repo)["id"].to_s.to_i
     end
 
     # Returns the branches for a given repo
     def branches(repo : String) : Hash(String, String)
-      uri = "https://gitlab.com/api/v4/projects/#{encode_repo(repo)}/repository/branches"
-      response = HTTP::Client.get uri
-      raise Exception.new("status_code for #{uri} was #{response.status_code}") unless response.success?
-      parsed = Array(Hash(String, JSON::Any)).from_json(response.body)
+      repo_id = get_repo_id(repo)
+      fetched_branches = @gitlab_client.branches(repo_id).as_a
       branches = Hash(String, String).new
-      parsed.each do |value|
-        next if value =~ /HEAD/
+      fetched_branches.each do |value|
         branch_name = value["name"].to_s
         branches[branch_name] = value["commit"]["id"].to_s
       end
@@ -42,12 +43,10 @@ module PlaceOS::FrontendLoader
 
     # Returns the commits for a given repo on specified branch
     def commits(repo : String, branch : String = "master") : Array(Remote::Commit)
-      url = "https://gitlab.com/api/v4/projects/#{encode_repo(repo)}/repository/commits?ref_name=#{branch}"
-      response = HTTP::Client.get url
-      raise Exception.new("status_code for #{url} was #{response.status_code}") unless response.success?
+      repo_id = get_repo_id(repo)
+      fetched_commits = @gitlab_client.commits(repo_id).as_a
       commits = Array(Remote::Commit).new
-      parsed = Array(Hash(String, JSON::Any)).from_json(response.body)
-      parsed.each do |value|
+      fetched_commits.each do |value|
         commit = Remote::Commit.new(
           commit: value["id"].as_s,
           date: value["authored_date"].as_s,
@@ -61,13 +60,11 @@ module PlaceOS::FrontendLoader
 
     # Returns the release tags for a given repo
     def releases(repo : String) : Array(String)
-      url = "https://gitlab.com/api/v4/projects/#{encode_repo(repo)}/releases"
-      response = HTTP::Client.get url
-      raise Exception.new("status_code for #{url} was #{response.status_code}") unless response.success?
+      repo_id = get_repo_id(repo)
+      fetched_releases = @gitlab_client.tags(repo_id).as_a
       tags = Array(String).new
-      parsed = Array(Hash(String, JSON::Any)).from_json(response.body)
-      parsed.each do |value|
-        tags << value["tag_name"].to_s
+      fetched_releases.each do |value|
+        tags << value["name"].to_s
       end
       tags
     end
@@ -135,13 +132,11 @@ module PlaceOS::FrontendLoader
     end
 
     def releases_hash(repo : String) : Hash(String, String)
-      url = "https://gitlab.com/api/v4/projects/#{encode_repo(repo)}/releases"
-      response = HTTP::Client.get url
-      raise Exception.new("status_code for #{url} was #{response.status_code}") unless response.success?
+      repo_id = get_repo_id(repo)
+      fetched_releases = @gitlab_client.tags(repo_id).as_a
       tags = Hash(String, String).new
-      parsed = Array(Hash(String, JSON::Any)).from_json(response.body)
-      parsed.each do |value|
-        tag_name = value["tag_name"].to_s
+      fetched_releases.each do |value|
+        tag_name = value["name"].to_s
         tags[tag_name] = value["commit"]["id"].to_s
       end
       tags
