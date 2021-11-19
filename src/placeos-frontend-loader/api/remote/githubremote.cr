@@ -1,14 +1,13 @@
 require "hash_file"
-require "./remote"
 require "octokit"
 
-module PlaceOS::FrontendLoader
-  class GitHubRemote < Remote
-    def initialize
-    end
+require "./remote"
 
-    private alias Remote = PlaceOS::FrontendLoader::Remote
+abstract class PlaceOS::FrontendLoader::Remote
+  class Generic < Remote
+  end
 
+  class GitHub < Remote
     TAR_NAME = "temp.tar.gz"
 
     @github_client = Octokit.client(GIT_USER, GIT_PASS)
@@ -48,9 +47,7 @@ module PlaceOS::FrontendLoader
       tags
     end
 
-    def url(repo_name : String) : String
-      "https://github.com/#{repo_name}"
-    end
+    getter api_base = "https://github.com"
 
     def download(
       ref : Remote::Reference,
