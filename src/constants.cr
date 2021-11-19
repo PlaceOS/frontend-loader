@@ -17,10 +17,10 @@ module PlaceOS::FrontendLoader
   # settings for `./placeos-frontend-loader/loader.cr`
   WWW      = ENV["PLACE_LOADER_WWW"]? || "www"
   CRON     = ENV["PLACE_LOADER_CRON"]? || "0 * * * *"
-  GIT_USER = ENV["PLACE_LOADER_GIT_USER"]?
-  GIT_PASS = ENV["PLACE_LOADER_GIT_PASS"]?
+  GIT_USER = ENV["PLACE_LOADER_GIT_USER"]? || ""
+  GIT_PASS = ENV["PLACE_LOADER_GIT_PASS"]? || ""
 
-  GIT_LAB_TOKEN = ENV["GIT_LAB_TOKEN"]? || ""
+  GITLAB_TOKEN = ENV["GITLAB_TOKEN"]? || ""
 
   # NOTE:: following used in `./placeos-frontend-loader/client.cr`
   # URI.parse(ENV["PLACE_LOADER_URI"]? || "http://127.0.0.1:3000")

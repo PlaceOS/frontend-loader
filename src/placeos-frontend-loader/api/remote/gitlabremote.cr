@@ -10,8 +10,9 @@ module PlaceOS::FrontendLoader
     private alias Remote = PlaceOS::FrontendLoader::Remote
 
     TAR_NAME = "temp.tar.gz"
+    ENDPOINT = "https://gitlab.com/api/v4"
 
-    @gitlab_client = Gitlab.client("https://gitlab.com/api/v4", GIT_LAB_TOKEN)
+    @gitlab_client = Gitlab.client(ENDPOINT, GITLAB_TOKEN)
 
     struct Commit
       include JSON::Serializable

@@ -11,7 +11,7 @@ module PlaceOS::FrontendLoader
 
     TAR_NAME = "temp.tar.gz"
 
-    @github_client = Octokit.client
+    @github_client = Octokit.client(GIT_USER, GIT_PASS)
 
     # Returns the branches for a given repo
     def branches(repo : String) : Hash(String, String)
