@@ -18,8 +18,6 @@ module PlaceOS::FrontendLoader
     private alias Git = PlaceOS::Compiler::Git
     private alias Remote = PlaceOS::FrontendLoader::Remote
 
-    TAR_NAME = "temp.tar.gz"
-
     getter actioner : Remote
 
     Habitat.create do
