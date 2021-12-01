@@ -22,6 +22,8 @@ module PlaceOS::FrontendLoader
 
   GITLAB_TOKEN = ENV["GITLAB_TOKEN"]? || ""
 
+  BASE_REF = "PlaceOS/www-core"
+
   # NOTE:: following used in `./placeos-frontend-loader/client.cr`
   # URI.parse(ENV["PLACE_LOADER_URI"]? || "http://127.0.0.1:3000")
   # Independent of this file as used in other projects

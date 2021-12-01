@@ -3,8 +3,8 @@ require "./remote"
 require "octokit"
 
 module PlaceOS::FrontendLoader
-  class GitHubRemote < Remote
-    def initialize
+  class Github < Remote
+    def initialize(@metadata : Metadata = Metadata.instance)
     end
 
     private alias Remote = PlaceOS::FrontendLoader::Remote
@@ -13,12 +13,10 @@ module PlaceOS::FrontendLoader
 
     # Returns the branches for a given repo
     def branches(repo : String) : Hash(String, String)
-      branches = Hash(String, String).new
-      @github_client.branches(repo).fetch_all.map do |branch|
-        next if branch =~ /HEAD/
+      @github_client.branches(repo).fetch_all.each_with_object({} of String => String) do |branch, branches|
+        next if branch.name =~ /HEAD/
         branches[branch.name] = branch.commit.sha
       end
-      branches
     end
 
     # Returns the commits for a given repo on specified branch
@@ -35,7 +33,7 @@ module PlaceOS::FrontendLoader
 
     # Returns the release tags for a given repo
     def releases(repo : String) : Array(String)
-      @github_client.tags(repo).fetch_all.map { |tag| tags << tag.name }
+      @github_client.tags(repo).fetch_all.map(&.name)
     end
 
     def url(repo_name : String) : String
@@ -47,7 +45,7 @@ module PlaceOS::FrontendLoader
       path : String,
       branch : String? = "master",
       hash : String? = "HEAD",
-      tag : String? = "latest"
+      tag : String? = nil
     )
       repository_uri = url(ref.repo_name)
       repository_folder_name = path.split("/").last

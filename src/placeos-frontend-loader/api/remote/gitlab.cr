@@ -3,8 +3,8 @@ require "./remote"
 require "gitlab"
 
 module PlaceOS::FrontendLoader
-  class GitLabRemote < PlaceOS::FrontendLoader::Remote
-    def initialize
+  class GitLab < PlaceOS::FrontendLoader::Remote
+    def initialize(@metadata : Metadata = Metadata.instance)
     end
 
     private alias Remote = PlaceOS::FrontendLoader::Remote
@@ -21,13 +21,10 @@ module PlaceOS::FrontendLoader
     # Returns the branches for a given repo
     def branches(repo : String) : Hash(String, String)
       repo_id = get_repo_id(repo)
-      fetched_branches = @gitlab_client.branches(repo_id).as_a
-      branches = Hash(String, String).new
-      fetched_branches.each do |value|
-        branch_name = value["name"].to_s
-        branches[branch_name] = value["commit"]["id"].to_s
+      @gitlab_client.branches(repo_id).as_a.each_with_object({} of String => String) do |branch, branches|
+        branch_name = branch["name"].to_s
+        branches[branch_name] = branch["commit"]["id"].to_s
       end
-      branches
     end
 
     # Returns the commits for a given repo on specified branch
@@ -46,14 +43,9 @@ module PlaceOS::FrontendLoader
     # Returns the release tags for a given repo
     def releases(repo : String) : Array(String)
       repo_id = get_repo_id(repo)
-      fetched_releases = @gitlab_client.tags(repo_id).as_a
-      tags = Array(String).new
-      fetched_releases.each do |value|
-        tags << value["name"].to_s
+      @gitlab_client.tags(repo_id).as_a.map do |value|
+        value["name"].to_s
       end
-      tags
-
-      @github_client.tags(repo).fetch_all.map { |tag| tags << tag.name }
     end
 
     def url(repo_name : String) : String
@@ -65,7 +57,7 @@ module PlaceOS::FrontendLoader
       path : String,
       branch : String? = "master",
       hash : String? = "HEAD",
-      tag : String? = "latest"
+      tag : String? = nil
     )
       repository_uri = url(ref.repo_name)
       repository_folder_name = path.split("/").last
@@ -84,6 +76,7 @@ module PlaceOS::FrontendLoader
         begin
           repo_encoded = ref.repo_name.gsub("/", "%2F")
           archive_url = "https://gitlab.com/api/v4/projects/#{repo_encoded}/repository/archive.tar.gz?sha=#{hash}"
+
           download_archive(archive_url, temp_tar_name)
           extract_archive(path, temp_tar_name)
           save_metadata(path, hash, ref.repo_name, branch)

@@ -1,8 +1,25 @@
 module PlaceOS::FrontendLoader
+  class Metadata
+    private getter hash_file : HashFile = HashFile
+    private getter lock : Mutex = Mutex.new
+
+    class_getter instance : Metadata do
+      new
+    end
+
+    def with_metadata
+      lock.synchronize do
+        yield hash_file
+      end
+    end
+  end
+
   abstract class PlaceOS::FrontendLoader::Remote
     private alias Git = PlaceOS::Compiler::Git
 
-    def initialize
+    getter metadata : Metadata
+
+    def initialize(@metadata : Metadata = Metadata.instance)
     end
 
     struct Commit
@@ -33,7 +50,7 @@ module PlaceOS::FrontendLoader
 
     abstract def releases(repo : String) : Array(String)
 
-    abstract def download(ref : Reference, path : String, branch : String? = "master", hash : String? = "HEAD", tag : String? = "latest")
+    abstract def download(ref : Reference, path : String, branch : String? = "master", hash : String? = "HEAD", tag : String? = nil)
 
     def extract_archive(dest_path : String, temp_tar_name : String)
       raise File::NotFoundError.new(message: "File #{temp_tar_name} does not exist", file: temp_tar_name) unless File.exists?(Path.new(temp_tar_name))
@@ -61,9 +78,9 @@ module PlaceOS::FrontendLoader
       File.delete(temp_tar_name)
     end
 
-    def get_hash(hash : String, repository_uri : String, tag : String, branch : String)
+    def get_hash(hash : String, repository_uri : String, tag, branch : String)
       if hash == "HEAD" || hash.nil?
-        if tag != "latest"
+        if (!tag.nil? && tag != "latest")
           hash = get_hash_by_tag(repository_uri, tag)
         elsif branch != "master"
           hash = get_hash_by_branch(repository_uri, branch)
@@ -75,10 +92,12 @@ module PlaceOS::FrontendLoader
     end
 
     def save_metadata(repo_path : String, hash : String, repository_uri : String, branch : String)
-      HashFile.config({"base_dir" => "#{repo_path}/metadata"})
-      HashFile["current_hash"] = hash
-      HashFile["current_repo"] = repository_uri.split(".com/").last
-      HashFile["current_branch"] = branch
+      metadata.with_metadata do |store|
+        store.config({"base_dir" => "#{repo_path}/metadata"})
+        store["current_hash"] = hash
+        store["current_repo"] = repository_uri.split(".com/").last
+        store["current_branch"] = branch
+      end
     end
 
     private def get_commit_hashes(repo_url : String)

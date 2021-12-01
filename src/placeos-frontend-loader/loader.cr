@@ -43,7 +43,7 @@ module PlaceOS::FrontendLoader
       @content_directory : String = Loader.settings.content_directory,
       @update_crontab : String = Loader.settings.update_crontab
     )
-      @actioner = PlaceOS::FrontendLoader::GitHubRemote.new
+      @actioner = PlaceOS::FrontendLoader::Github.new
       super()
     end
 
@@ -60,7 +60,7 @@ module PlaceOS::FrontendLoader
 
     # Frontend loader implicitly and idempotently creates a base www
     protected def create_base_www
-      base_ref = Remote::Reference.new("PlaceOS/www-core", "master")
+      base_ref = Remote::Reference.new(BASE_REF, "master")
       actioner.download(ref: base_ref, path: File.expand_path(content_directory))
     end
 
