@@ -65,7 +65,7 @@ module PlaceOS::FrontendLoader
           archive_url = "https://github.com/#{ref.repo_name}/archive/#{hash}.tar.gz"
           download_archive(archive_url, temp_tar_name)
           extract_archive(path, temp_tar_name)
-          save_metadata(path, hash, repository_uri, branch)
+          save_metadata(path, hash, repository_uri, branch, ref.remote_type)
         rescue ex : KeyError | File::Error
           Log.error(exception: ex) { "Could not download repository: #{ex.message}" }
         end

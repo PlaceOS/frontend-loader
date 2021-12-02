@@ -39,6 +39,26 @@ module PlaceOS::FrontendLoader
     getter update_crontab : String
     private property update_cron : Tasker::CRON(Int64)? = nil
 
+    def self.get_actioner(ref : Remote::Reference) : Remote
+      if ref.remote_type == Remote::Reference::Type::Github
+        PlaceOS::FrontendLoader::Github.new
+      elsif ref.remote_type == Remote::Reference::Type::GitLab
+        PlaceOS::FrontendLoader::GitLab.new
+      else
+        raise Exception.new("repository uri not supported")
+      end
+    end
+
+    def set_actioner(remote_type : String)
+      if remote_type == Remote::Reference::Type::Github.to_s
+        @actioner = PlaceOS::FrontendLoader::Github.new
+      elsif remote_type == Remote::Reference::Type::GitLab.to_s
+        @actioner = PlaceOS::FrontendLoader::GitLab.new
+      else
+        raise Exception.new("repository uri not supported")
+      end
+    end
+
     def initialize(
       @content_directory : String = Loader.settings.content_directory,
       @update_crontab : String = Loader.settings.update_crontab
@@ -60,7 +80,7 @@ module PlaceOS::FrontendLoader
 
     # Frontend loader implicitly and idempotently creates a base www
     protected def create_base_www
-      base_ref = Remote::Reference.new(BASE_REF, "master")
+      base_ref = Remote::Reference.new(url: BASE_REF, branch: "master")
       actioner.download(ref: base_ref, path: File.expand_path(content_directory))
     end
 
@@ -131,8 +151,10 @@ module PlaceOS::FrontendLoader
       # Download and extract the repository at given branch or commit
       ref = Remote::Reference.new(repository.uri, branch: "master", hash: hash)
 
+      loaded_actioner = get_actioner(ref)
+
       # add to remote manger
-      actioner.download(ref: ref, hash: hash, branch: branch, path: repository_directory)
+      loaded_actioner.download(ref: ref, hash: hash, branch: branch, path: repository_directory)
 
       # Grab commit for the downloaded/extracted repository
       checked_out_commit = Api::Repositories.current_commit(repository_directory)

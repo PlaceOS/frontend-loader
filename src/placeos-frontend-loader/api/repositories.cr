@@ -28,7 +28,13 @@ module PlaceOS::FrontendLoader::Api
     def self.commits(folder : String, branch : String, count : Int32 = 50, loader : Loader = Loader.instance)
       HashFile.config({"base_dir" => "#{loader.content_directory}/#{folder}/metadata"})
       repo = HashFile["current_repo"].to_s
-      loader.actioner.commits(repo, branch)[0...count]
+      remote_type = HashFile["remote_type"].to_s
+      if remote_type
+        loader.set_actioner(remote_type)
+        loader.actioner.commits(repo, branch)[0...count]
+      else
+        raise Exception.new("remote_type could not be read from metadata")
+      end
     rescue e
       Log.error(exception: e) { "failed to fetch commmits: #{e.message}" }
       nil
@@ -47,7 +53,13 @@ module PlaceOS::FrontendLoader::Api
     def self.branches(folder, loader : Loader = Loader.instance)
       HashFile.config({"base_dir" => "#{loader.content_directory}/#{folder}/metadata"})
       repo = HashFile["current_repo"].to_s
-      loader.actioner.branches(repo).keys.sort!.uniq!
+      remote_type = HashFile["remote_type"].to_s
+      if remote_type
+        loader.set_actioner(remote_type)
+        loader.actioner.branches(repo).keys.sort!.uniq!
+      else
+        raise Exception.new("remote_type could not be read from metadata")
+      end
     rescue e
       Log.error(exception: e) { "failed to fetch branches for #{folder}" }
       nil

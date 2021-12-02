@@ -16,6 +16,7 @@ module PlaceOS::FrontendLoader
 
   abstract class PlaceOS::FrontendLoader::Remote
     private alias Git = PlaceOS::Compiler::Git
+    private alias Remote = PlaceOS::FrontendLoader::Remote
 
     getter metadata : Metadata
 
@@ -35,12 +36,27 @@ module PlaceOS::FrontendLoader
 
     struct Reference
       include JSON::Serializable
+
+      enum Type
+        GitLab
+        Github
+      end
+
       getter repo_name : String
+      getter remote_type : Reference::Type
       getter branch : String
       getter tag : String | Nil
 
       def initialize(@url : String, @branch : String? = "master", @tag : String? = nil, @hash : String? = "HEAD")
         @repo_name = @url.split(".com/").last.rstrip("/")
+
+        if @url.includes?("github")
+          @remote_type = Type::Github
+        elsif @url.includes?("gitlab")
+          @remote_type = Type::GitLab
+        else
+          raise Exception.new("URL not supported")
+        end
       end
     end
 
@@ -78,25 +94,28 @@ module PlaceOS::FrontendLoader
       File.delete(temp_tar_name)
     end
 
-    def get_hash(hash : String, repository_uri : String, tag, branch : String)
-      if hash == "HEAD" || hash.nil?
-        if (!tag.nil? && tag != "latest")
-          hash = get_hash_by_tag(repository_uri, tag)
-        elsif branch != "master"
-          hash = get_hash_by_branch(repository_uri, branch)
-        else
-          hash = get_hash_head(repository_uri)
+    def get_hash(hash : String, repository_uri : String, tag : String?, branch : String)
+      begin
+        if hash == "HEAD"
+          if (!tag.nil?)
+            hash = get_hash_by_tag(repository_uri, tag)
+          else
+            hash = get_hash_by_branch(repository_uri, branch)
+          end
         end
+      rescue ex : KeyError
+        hash = get_hash_head(repository_uri) if hash.nil?
       end
       hash.not_nil!
     end
 
-    def save_metadata(repo_path : String, hash : String, repository_uri : String, branch : String)
+    def save_metadata(repo_path : String, hash : String, repository_uri : String, branch : String, type : Remote::Reference::Type)
       metadata.with_metadata do |store|
         store.config({"base_dir" => "#{repo_path}/metadata"})
         store["current_hash"] = hash
         store["current_repo"] = repository_uri.split(".com/").last
         store["current_branch"] = branch
+        store["remote_type"] = type.to_s
       end
     end
 
