@@ -26,18 +26,17 @@ module PlaceOS::FrontendLoader::Api
     end
 
     def self.commits(folder : String, branch : String, count : Int32 = 50, loader : Loader = Loader.instance)
-      HashFile.config({"base_dir" => "#{loader.content_directory}/#{folder}/metadata"})
-      repo = HashFile["current_repo"].to_s
-      remote_type = HashFile["remote_type"].to_s
+      metadata = Metadata.instance
+      repo = metadata.get_metadata(folder, "current_repo")
+      remote_type = metadata.get_metadata(folder, "remote_type")
       if remote_type
         loader.set_actioner(remote_type)
         loader.actioner.commits(repo, branch)[0...count]
       else
-        raise Exception.new("remote_type could not be read from metadata")
+        e = Exception.new("remote_type could not be read from metadata")
+        Log.error(exception: e) { "failed to fetch commmits: #{e.message}" }
+        nil
       end
-    rescue e
-      Log.error(exception: e) { "failed to fetch commmits: #{e.message}" }
-      nil
     end
 
     # Returns an array of branches for a repository
@@ -51,27 +50,23 @@ module PlaceOS::FrontendLoader::Api
     end
 
     def self.branches(folder, loader : Loader = Loader.instance)
-      HashFile.config({"base_dir" => "#{loader.content_directory}/#{folder}/metadata"})
-      repo = HashFile["current_repo"].to_s
-      remote_type = HashFile["remote_type"].to_s
+      metadata = Metadata.instance
+      repo = metadata.get_metadata(folder, "current_repo")
+      remote_type = metadata.get_metadata(folder, "remote_type")
+
       if remote_type
         loader.set_actioner(remote_type)
         loader.actioner.branches(repo).keys.sort!.uniq!
       else
-        raise Exception.new("remote_type could not be read from metadata")
+        e = Exception.new("remote_type could not be read from metadata")
+        Log.error(exception: e) { "failed to fetch branches for #{folder}" }
+        nil
       end
-    rescue e
-      Log.error(exception: e) { "failed to fetch branches for #{folder}" }
-      nil
     end
 
     # Returns a hash of folder name to commits
     get "/", :loaded do
       render json: Repositories.loaded_repositories
-    end
-
-    def self.loaded?(folder : String)
-      folder == loader.last_loaded.folder_name
     end
 
     # Generates a hash of currently loaded repositories and their current commit
@@ -90,18 +85,15 @@ module PlaceOS::FrontendLoader::Api
     end
 
     def self.current_branch(repository_path : String)
-      HashFile.config({"base_dir" => "#{repository_path}/metadata"})
-      HashFile["current_branch"].to_s.strip
+      Metadata.instance.get_metadata(repository_path.split("/").last, "current_branch")
     end
 
     def self.current_commit(repository_path : String)
-      HashFile.config({"base_dir" => "#{repository_path}/metadata"})
-      HashFile["current_hash"].to_s.strip
+      Metadata.instance.get_metadata(repository_path.split("/").last, "current_hash")
     end
 
     def self.current_repo(repository_path : String)
-      HashFile.config({"base_dir" => "#{repository_path}/metadata"})
-      HashFile["current_repo"].to_s.strip
+      Metadata.instance.get_metadata(repository_path.split("/").last, "current_repo")
     end
   end
 end

@@ -40,21 +40,23 @@ module PlaceOS::FrontendLoader
     private property update_cron : Tasker::CRON(Int64)? = nil
 
     def self.get_actioner(ref : Remote::Reference) : Remote
-      if ref.remote_type == Remote::Reference::Type::Github
+      case ref.remote_type
+      in Remote::Reference::Type::Github
         PlaceOS::FrontendLoader::Github.new
-      elsif ref.remote_type == Remote::Reference::Type::GitLab
+      in Remote::Reference::Type::GitLab
         PlaceOS::FrontendLoader::GitLab.new
-      else
+      in Nil
         raise Exception.new("repository uri not supported")
       end
     end
 
     def set_actioner(remote_type : String)
-      if remote_type == Remote::Reference::Type::Github.to_s
+      case Remote::Reference::Type.parse?(remote_type)
+      in Remote::Reference::Type::Github
         @actioner = PlaceOS::FrontendLoader::Github.new
-      elsif remote_type == Remote::Reference::Type::GitLab.to_s
+      in Remote::Reference::Type::GitLab
         @actioner = PlaceOS::FrontendLoader::GitLab.new
-      else
+      in Nil
         raise Exception.new("repository uri not supported")
       end
     end

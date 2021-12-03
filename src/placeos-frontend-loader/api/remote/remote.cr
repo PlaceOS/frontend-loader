@@ -8,8 +8,15 @@ module PlaceOS::FrontendLoader
     end
 
     def with_metadata
+      hash_file.config({"base_dir" => "/app"})
       lock.synchronize do
         yield hash_file
+      end
+    end
+
+    def get_metadata(repo_name, field)
+      lock.synchronize do
+        hash_file["#{repo_name}/metadata/#{field}"].to_s.strip
       end
     end
   end
@@ -48,14 +55,15 @@ module PlaceOS::FrontendLoader
       getter tag : String | Nil
 
       def initialize(@url : String, @branch : String? = "master", @tag : String? = nil, @hash : String? = "HEAD")
-        @repo_name = @url.split(".com/").last.rstrip("/")
+        uri = URI.parse(@url)
+        @repo_name = uri.path.strip("/")
 
-        if @url.includes?("github")
+        if uri.host.to_s.includes?("github")
           @remote_type = Type::Github
-        elsif @url.includes?("gitlab")
+        elsif uri.host.to_s.includes?("gitlab")
           @remote_type = Type::GitLab
         else
-          raise Exception.new("URL not supported")
+          raise Exception.new("Remote host not supported")
         end
       end
     end
@@ -94,6 +102,7 @@ module PlaceOS::FrontendLoader
       File.delete(temp_tar_name)
     end
 
+    # grabs the commit sha needed for repo download based on provided tag/branch or defaults to latest commit
     def get_hash(hash : String, repository_uri : String, tag : String?, branch : String)
       begin
         if hash == "HEAD"
@@ -111,11 +120,10 @@ module PlaceOS::FrontendLoader
 
     def save_metadata(repo_path : String, hash : String, repository_uri : String, branch : String, type : Remote::Reference::Type)
       metadata.with_metadata do |store|
-        store.config({"base_dir" => "#{repo_path}/metadata"})
-        store["current_hash"] = hash
-        store["current_repo"] = repository_uri.split(".com/").last
-        store["current_branch"] = branch
-        store["remote_type"] = type.to_s
+        store["#{repo_path}/metadata/current_hash"] = hash
+        store["#{repo_path}/metadata/current_repo"] = repository_uri.split(".com/").last
+        store["#{repo_path}/metadata/current_branch"] = branch
+        store["#{repo_path}/metadata/remote_type"] = type.to_s
       end
     end
 
