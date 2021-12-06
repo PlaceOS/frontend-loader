@@ -17,8 +17,9 @@ module PlaceOS::FrontendLoader
 
     private alias Git = PlaceOS::Compiler::Git
     private alias Remote = PlaceOS::FrontendLoader::Remote
+    private alias Type = PlaceOS::FrontendLoader::Remote::Reference::Type
 
-    getter actioner : Remote
+    private getter remotes : Hash(Type, Remote) = Hash(Type, Remote).new
 
     Habitat.create do
       setting content_directory : String = WWW
@@ -39,24 +40,13 @@ module PlaceOS::FrontendLoader
     getter update_crontab : String
     private property update_cron : Tasker::CRON(Int64)? = nil
 
-    def self.get_actioner(ref : Remote::Reference) : Remote
-      case ref.remote_type
-      in Remote::Reference::Type::Github
+    def remote_for(type : Type) : Remote
+      case type
+      when Type::Github
         PlaceOS::FrontendLoader::Github.new
-      in Remote::Reference::Type::GitLab
+      when Type::GitLab
         PlaceOS::FrontendLoader::GitLab.new
-      in Nil
-        raise Exception.new("repository uri not supported")
-      end
-    end
-
-    def set_actioner(remote_type : String)
-      case Remote::Reference::Type.parse?(remote_type)
-      in Remote::Reference::Type::Github
-        @actioner = PlaceOS::FrontendLoader::Github.new
-      in Remote::Reference::Type::GitLab
-        @actioner = PlaceOS::FrontendLoader::GitLab.new
-      in Nil
+      else
         raise Exception.new("repository uri not supported")
       end
     end
@@ -65,7 +55,9 @@ module PlaceOS::FrontendLoader
       @content_directory : String = Loader.settings.content_directory,
       @update_crontab : String = Loader.settings.update_crontab
     )
-      @actioner = PlaceOS::FrontendLoader::Github.new
+      Type.values.each do |key|
+        @remotes[key] = remote_for(key)
+      end
       super()
     end
 
@@ -83,7 +75,7 @@ module PlaceOS::FrontendLoader
     # Frontend loader implicitly and idempotently creates a base www
     protected def create_base_www
       base_ref = Remote::Reference.new(url: BASE_REF, branch: "master")
-      actioner.download(ref: base_ref, path: File.expand_path(content_directory))
+      remotes[base_ref.remote_type].download(ref: base_ref, path: File.expand_path(content_directory))
     end
 
     protected def start_update_cron : Nil
@@ -117,7 +109,7 @@ module PlaceOS::FrontendLoader
         Loader.load(
           repository: repository,
           content_directory: @content_directory,
-          actioner: @actioner
+          remotes: @remotes
         )
       in Action::Deleted
         # Unload the repository
@@ -134,7 +126,7 @@ module PlaceOS::FrontendLoader
     def self.load(
       repository : Model::Repository,
       content_directory : String,
-      actioner : Remote
+      remotes : Hash(Type, Remote)
     )
       branch = repository.branch
       # username = repository.username || Loader.settings.username
@@ -153,10 +145,10 @@ module PlaceOS::FrontendLoader
       # Download and extract the repository at given branch or commit
       ref = Remote::Reference.new(repository.uri, branch: "master", hash: hash)
 
-      loaded_actioner = get_actioner(ref)
+      current_remote = remotes[ref.remote_type]
 
       # add to remote manger
-      loaded_actioner.download(ref: ref, hash: hash, branch: branch, path: repository_directory)
+      current_remote.download(ref: ref, hash: hash, branch: branch, path: repository_directory)
 
       # Grab commit for the downloaded/extracted repository
       checked_out_commit = Api::Repositories.current_commit(repository_directory)

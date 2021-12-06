@@ -1,22 +1,22 @@
 module PlaceOS::FrontendLoader
   class Metadata
     private getter hash_file : HashFile = HashFile
-    private getter lock : Mutex = Mutex.new
+    private getter lock : Mutex = Mutex.new(protection = Mutex::Protection::Reentrant)
 
     class_getter instance : Metadata do
       new
     end
 
-    def with_metadata
-      hash_file.config({"base_dir" => "/app"})
-      lock.synchronize do
-        yield hash_file
-      end
-    end
-
     def get_metadata(repo_name, field)
       lock.synchronize do
         hash_file["#{repo_name}/metadata/#{field}"].to_s.strip
+      end
+    end
+
+    def set_metadata(repo_name, field, value)
+      hash_file.config({"base_dir" => "/app"})
+      lock.synchronize do
+        hash_file["#{repo_name}/metadata/#{field}"] = value.to_s
       end
     end
   end
@@ -54,17 +54,19 @@ module PlaceOS::FrontendLoader
       getter branch : String
       getter tag : String | Nil
 
-      def initialize(@url : String, @branch : String? = "master", @tag : String? = nil, @hash : String? = "HEAD")
-        uri = URI.parse(@url)
+      def initialize(url : String | URI, @branch : String? = "master", @tag : String? = nil, @hash : String? = "HEAD")
+        uri = url.is_a?(URI) ? url : URI.parse(url)
         @repo_name = uri.path.strip("/")
-
-        if uri.host.to_s.includes?("github")
-          @remote_type = Type::Github
-        elsif uri.host.to_s.includes?("gitlab")
-          @remote_type = Type::GitLab
+        @remote_type = {% begin %}
+         case uri.host.to_s
+          {% for remote in Reference::Type.constants %}
+        when .includes?(Reference::Type::{{ remote }}.to_s.downcase)
+          Reference::Type::{{ remote.id }}
+        {% end %}
         else
-          raise Exception.new("Remote host not supported")
+          raise Exception.new("Host not supported: #{url}")
         end
+        {% end %}
       end
     end
 
@@ -119,12 +121,10 @@ module PlaceOS::FrontendLoader
     end
 
     def save_metadata(repo_path : String, hash : String, repository_uri : String, branch : String, type : Remote::Reference::Type)
-      metadata.with_metadata do |store|
-        store["#{repo_path}/metadata/current_hash"] = hash
-        store["#{repo_path}/metadata/current_repo"] = repository_uri.split(".com/").last
-        store["#{repo_path}/metadata/current_branch"] = branch
-        store["#{repo_path}/metadata/remote_type"] = type.to_s
-      end
+      metadata.set_metadata(repo_path, "current_hash", hash)
+      metadata.set_metadata(repo_path, "current_repo", repository_uri.split(".com/").last)
+      metadata.set_metadata(repo_path, "current_branch", branch)
+      metadata.set_metadata(repo_path, "remote_type", type)
     end
 
     private def get_commit_hashes(repo_url : String)
