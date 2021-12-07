@@ -1,7 +1,11 @@
 module PlaceOS::FrontendLoader
   class Metadata
     private getter hash_file : HashFile = HashFile
-    private getter lock : Mutex = Mutex.new(protection = Mutex::Protection::Reentrant)
+    private getter lock : Mutex = Mutex.new(protection: Mutex::Protection::Reentrant)
+
+    def initialize
+      hash_file.config({"base_dir" => Dir.current})
+    end
 
     class_getter instance : Metadata do
       new
@@ -13,8 +17,13 @@ module PlaceOS::FrontendLoader
       end
     end
 
+    def remote_type(repo_name)
+      lock.synchronize do
+        PlaceOS::FrontendLoader::Remote::Reference::Type.parse?(hash_file["#{repo_name}/metadata/remote_type"].to_s.strip)
+      end
+    end
+
     def set_metadata(repo_name, field, value)
-      hash_file.config({"base_dir" => "/app"})
       lock.synchronize do
         hash_file["#{repo_name}/metadata/#{field}"] = value.to_s
       end
@@ -52,6 +61,7 @@ module PlaceOS::FrontendLoader
       getter repo_name : String
       getter remote_type : Reference::Type
       getter branch : String
+      getter hash : String
       getter tag : String | Nil
 
       def initialize(url : String | URI, @branch : String? = "master", @tag : String? = nil, @hash : String? = "HEAD")
@@ -67,6 +77,11 @@ module PlaceOS::FrontendLoader
           raise Exception.new("Host not supported: #{url}")
         end
         {% end %}
+      end
+
+      def self.from_repository(repository : Model::Repository)
+        hash = repository.should_pull? ? "HEAD" : repository.commit_hash
+        self.new(url: repository.uri, branch: repository.branch, hash: hash)
       end
     end
 

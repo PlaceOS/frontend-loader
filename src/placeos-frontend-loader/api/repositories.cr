@@ -14,8 +14,6 @@ module PlaceOS::FrontendLoader::Api
 
     getter loader : Loader { self.class.loader }
 
-    private alias Type = PlaceOS::FrontendLoader::Remote::Reference::Type
-
     # Returns an array of commits for a repository
     get "/:folder_name/commits", :commits do
       branch = params["branch"]?.presence || "master"
@@ -30,17 +28,11 @@ module PlaceOS::FrontendLoader::Api
     def self.commits(folder : String, branch : String, count : Int32 = 50, loader : Loader = Loader.instance)
       metadata = Metadata.instance
       repo = metadata.get_metadata(folder, "current_repo")
-      remote_type = Type.parse?(metadata.get_metadata(folder, "remote_type"))
-
-      if remote_type
-        loader
-          .remote_for(remote_type)
-          .commits(repo, branch)[0...count]
-      else
-        e = Exception.new("remote_type could not be read from metadata")
-        Log.error(exception: e) { "failed to fetch commmits: #{e.message}" }
-        nil
-      end
+      remote_type = metadata.remote_type(folder)
+      return unless remote_type
+      loader
+        .remote_for(remote_type)
+        .commits(repo, branch)[0...count]
     end
 
     # Returns an array of branches for a repository
@@ -56,20 +48,14 @@ module PlaceOS::FrontendLoader::Api
     def self.branches(folder, loader : Loader = Loader.instance)
       metadata = Metadata.instance
       repo = metadata.get_metadata(folder, "current_repo")
-      remote_type = Type.parse?(metadata.get_metadata(folder, "remote_type"))
-
-      if remote_type
-        loader
-          .remote_for(remote_type)
-          .branches(repo)
-          .keys
-          .sort!
-          .uniq!
-      else
-        e = Exception.new("remote_type could not be read from metadata")
-        Log.error(exception: e) { "failed to fetch branches for #{folder}" }
-        nil
-      end
+      remote_type = metadata.remote_type(folder)
+      return unless remote_type
+      loader
+        .remote_for(remote_type)
+        .branches(repo)
+        .keys
+        .sort!
+        .uniq!
     end
 
     # Returns a hash of folder name to commits

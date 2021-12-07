@@ -42,12 +42,10 @@ module PlaceOS::FrontendLoader
 
     def remote_for(type : Type) : Remote
       case type
-      when Type::Github
+      in Type::Github
         PlaceOS::FrontendLoader::Github.new
-      when Type::GitLab
+      in Type::GitLab
         PlaceOS::FrontendLoader::GitLab.new
-      else
-        raise Exception.new("repository uri not supported")
       end
     end
 
@@ -128,27 +126,19 @@ module PlaceOS::FrontendLoader
       content_directory : String,
       remotes : Hash(Type, Remote)
     )
-      branch = repository.branch
-      # username = repository.username || Loader.settings.username
-      # password = repository.decrypt_password || Loader.settings.password
-      repository_commit = repository.commit_hash
       content_directory = File.expand_path(content_directory)
       repository_directory = File.expand_path(File.join(content_directory, repository.folder_name))
 
-      if repository.uri_changed? && Dir.exists?(repository_directory)
-        # Reload the repository to prevent conflicting histories
-        unload(repository, content_directory)
-      end
+      repository_commit = repository.commit_hash
 
-      hash = repository.should_pull? ? "HEAD" : repository.commit_hash
+      unload(repository, content_directory) if repository.uri_changed? && Dir.exists?(repository_directory)
 
       # Download and extract the repository at given branch or commit
-      ref = Remote::Reference.new(repository.uri, branch: "master", hash: hash)
+      ref = Remote::Reference.from_repository(repository)
 
       current_remote = remotes[ref.remote_type]
 
-      # add to remote manger
-      current_remote.download(ref: ref, hash: hash, branch: branch, path: repository_directory)
+      current_remote.download(ref: ref, hash: ref.hash, branch: ref.branch, path: repository_directory)
 
       # Grab commit for the downloaded/extracted repository
       checked_out_commit = Api::Repositories.current_commit(repository_directory)
@@ -173,7 +163,7 @@ module PlaceOS::FrontendLoader
       Log.info { {
         message:           "loaded repository",
         commit:            checked_out_commit,
-        branch:            branch,
+        branch:            repository.branch,
         repository:        repository.folder_name,
         repository_commit: repository_commit,
         uri:               repository.uri,
