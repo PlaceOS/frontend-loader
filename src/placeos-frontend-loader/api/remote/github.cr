@@ -33,7 +33,11 @@ module PlaceOS::FrontendLoader
 
     # Returns the release tags for a given repo
     def releases(repo : String) : Array(String)
-      @github_client.tags(repo).fetch_all.map(&.name)
+      releases = Array(String).new
+      @github_client.tags(repo).fetch_all.map do |rel|
+        releases << rel.name.to_s
+      end
+      releases
     end
 
     def url(repo_name : String) : String

@@ -58,6 +58,26 @@ module PlaceOS::FrontendLoader::Api
         .uniq!
     end
 
+    get "/:folder_name/releases", :branches do
+      folder_name = params["folder_name"]
+      count = (params["count"]? || 50).to_i
+      Log.context.set(folder: folder_name)
+
+      releases = Repositories.releases(folder_name, count)
+
+      releases.nil? ? head :not_found : render json: releases
+    end
+
+    def self.releases(folder, count : Int32 = 50, loader : Loader = Loader.instance)
+      metadata = Metadata.instance
+      repo = metadata.get_metadata(folder, "current_repo")
+      remote_type = metadata.remote_type(folder)
+      return unless remote_type
+      loader
+        .remote_for(remote_type)
+        .releases(repo)[0...count]
+    end
+
     # Returns a hash of folder name to commits
     get "/", :loaded do
       render json: Repositories.loaded_repositories

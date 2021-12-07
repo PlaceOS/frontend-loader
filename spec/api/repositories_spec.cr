@@ -30,6 +30,14 @@ module PlaceOS::FrontendLoader::Api
       loaded[repository.folder_name].should_not eq("HEAD")
     end
 
+    it "lists releases for a loaded repository" do
+      repository = example_repository(TEST_FOLDER)
+      loader = Loader.new
+      loader.process_resource(:created, repository).success?.should be_true
+      releases = Api::Repositories.releases(repository.folder_name, loader: loader).not_nil!
+      releases.should_not be_empty
+    end
+
     describe "query" do
       it "does not mutate the managed repositories" do
         branch = "test-fixture"
