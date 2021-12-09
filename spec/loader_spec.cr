@@ -128,6 +128,12 @@ module PlaceOS::FrontendLoader
         Dir.exists?(expected_path).should be_true
         Api::Repositories.current_branch(expected_path).should eq updated_branch
       end
+
+      it "downloads a release asset" do
+        actioner = PlaceOS::FrontendLoader::Github.new
+        actioner.download_latest_asset("tassja/octokit.cr", Dir.current.to_s)
+        File.exists?("new_file.txt").should be_true
+      end
     end
   end
 end

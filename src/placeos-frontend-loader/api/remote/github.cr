@@ -40,6 +40,14 @@ module PlaceOS::FrontendLoader
       releases
     end
 
+    def download_latest_asset(repo : String, path : String)
+      @github_client.latest_release_asset(repo, path)
+    end
+
+    def download_asset(repo : String, tag : String, path : String)
+      @github_client.release_asset(repo, tag, path)
+    end
+
     def url(repo_name : String) : String
       "https://github.com/#{repo_name}"
     end
