@@ -58,17 +58,19 @@ module PlaceOS::FrontendLoader
         Github
       end
 
+      getter repository : Model::Repository
       getter repo_name : String
       getter remote_type : Reference::Type
       getter branch : String
       getter hash : String
       getter tag : String | Nil
 
-      def initialize(url : String | URI, @branch : String? = "master", @tag : String? = nil, @hash : String? = "HEAD")
+      def initialize(@repository : Model::Repository, @branch : String? = "master", @tag : String? = nil)
+        url = repository.uri
         uri = url.is_a?(URI) ? url : URI.parse(url)
         @repo_name = uri.path.strip("/")
         @remote_type = {% begin %}
-         case uri.host.to_s
+        case uri.host.to_s
           {% for remote in Reference::Type.constants %}
         when .includes?(Reference::Type::{{ remote }}.to_s.downcase)
           Reference::Type::{{ remote.id }}
@@ -77,11 +79,7 @@ module PlaceOS::FrontendLoader
           raise Exception.new("Host not supported: #{url}")
         end
         {% end %}
-      end
-
-      def self.from_repository(repository : Model::Repository)
-        hash = repository.should_pull? ? "HEAD" : repository.commit_hash
-        self.new(url: repository.uri, branch: repository.branch, hash: hash)
+        @hash = repository.should_pull? ? "HEAD" : repository.commit_hash
       end
     end
 

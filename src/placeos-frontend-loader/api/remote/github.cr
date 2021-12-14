@@ -34,7 +34,7 @@ module PlaceOS::FrontendLoader
     # Returns the release tags for a given repo
     def releases(repo : String) : Array(String)
       releases = Array(String).new
-      @github_client.tags(repo).fetch_all.map do |rel|
+      @github_client.releases(repo).fetch_all.map do |rel|
         releases << rel.name.to_s
       end
       releases
@@ -62,9 +62,6 @@ module PlaceOS::FrontendLoader
       repository_uri = url(ref.repo_name)
       repository_folder_name = path.split("/").last
 
-      hash = get_hash(hash, repository_uri, tag, branch)
-      temp_tar_name = Random.rand(UInt32).to_s
-
       Git.repository_lock(repository_folder_name).write do
         Log.info { {
           message:    "downloading repository",
@@ -73,13 +70,20 @@ module PlaceOS::FrontendLoader
           uri:        repository_uri,
         } }
 
-        begin
-          archive_url = "https://github.com/#{ref.repo_name}/archive/#{hash}.tar.gz"
-          download_archive(archive_url, temp_tar_name)
-          extract_archive(path, temp_tar_name)
-          save_metadata(repository_folder_name, hash, repository_uri, branch, ref.remote_type)
-        rescue ex : KeyError | File::Error
-          Log.error(exception: ex) { "Could not download repository: #{ex.message}" }
+        if ref.repository.release
+          Dir.mkdir_p(path) unless Dir.exists?(path)
+          self.download_latest_asset(ref.repo_name, path)
+        else
+          hash = get_hash(hash, repository_uri, tag, branch)
+          temp_tar_name = Random.rand(UInt32).to_s
+          begin
+            archive_url = "https://github.com/#{ref.repo_name}/archive/#{hash}.tar.gz"
+            download_archive(archive_url, temp_tar_name)
+            extract_archive(path, temp_tar_name)
+            save_metadata(repository_folder_name, hash, repository_uri, branch, ref.remote_type)
+          rescue ex : KeyError | File::Error
+            Log.error(exception: ex) { "Could not download repository: #{ex.message}" }
+          end
         end
       end
     end

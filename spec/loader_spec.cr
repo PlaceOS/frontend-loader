@@ -134,6 +134,16 @@ module PlaceOS::FrontendLoader
         actioner.download_latest_asset("tassja/octokit.cr", Dir.current.to_s)
         File.exists?("new_file.txt").should be_true
       end
+
+      it "downloads the release asset on repo flag" do
+        repository = example_repository(LAB_TEST_FOLDER, uri: "https://gitlab.com/tassja/octokit.cr/")
+        repository.release = true
+        ref = PlaceOS::FrontendLoader::Remote::Reference.new(repository)
+        expected_path = File.join(TEST_DIR, repository.folder_name)
+        actioner = PlaceOS::FrontendLoader::Github.new
+        actioner.download(ref: ref, path: expected_path)
+        File.exists?(File.join(expected_path, "new_file.txt")).should be_true
+      end
     end
   end
 end
