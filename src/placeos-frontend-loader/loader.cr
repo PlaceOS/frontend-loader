@@ -141,7 +141,7 @@ module PlaceOS::FrontendLoader
       unload(repository, content_directory) if repository.uri_changed? && Dir.exists?(repository_directory)
 
       # Download and extract the repository at given branch or commit
-      ref = Remote::Reference.new(repository: repository, branch: repository.branch)
+      ref = Remote::Reference.new(repository: repository)
 
       current_remote = remotes[ref.remote_type]
 

@@ -39,6 +39,22 @@ module PlaceOS::FrontendLoader
     def initialize(@metadata : Metadata = Metadata.instance)
     end
 
+    def self.remote_for(repository_url : URI | String) : Remote
+      uri = repository_url.is_a?(URI) ? repository_url : URI.parse(repository_url)
+
+      remote = {% begin %}
+        case uri.host.to_s
+          {% for remote in Reference::Type.constants %}
+        when .includes?(Reference::Type::{{ remote }}.to_s.downcase)
+          PlaceOS::FrontendLoader::{{ remote.id }}.new
+        {% end %}
+        else
+          raise Exception.new("Host not supported: #{repository_url}")
+        end
+        {% end %}
+      remote
+    end
+
     struct Commit
       include JSON::Serializable
       getter commit : String
@@ -65,8 +81,25 @@ module PlaceOS::FrontendLoader
       getter hash : String
       getter tag : String | Nil
 
-      def initialize(@repository : Model::Repository, @branch : String? = "master", @tag : String? = nil)
+      def initialize(url : String | URI, @branch : String? = "master", @tag : String? = nil, @hash : String? = "HEAD")
+        uri = url.is_a?(URI) ? url : URI.parse(url)
+        @repo_name = uri.path.strip("/")
+        @remote_type = {% begin %}
+          case uri.host.to_s
+            {% for remote in Reference::Type.constants %}
+          when .includes?(Reference::Type::{{ remote }}.to_s.downcase)
+            Reference::Type::{{ remote.id }}
+          {% end %}
+          else
+            raise Exception.new("Host not supported: #{url}")
+          end
+          {% end %}
+        @repository = Model::Repository.new(name: @repo_name, folder_name: @repo_name, uri: uri, commit_hash: @hash, branch: branch)
+      end
+
+      def initialize(@repository : Model::Repository, @tag : String? = nil)
         url = repository.uri
+        @branch = repository.branch
         uri = url.is_a?(URI) ? url : URI.parse(url)
         @repo_name = uri.path.strip("/")
         @remote_type = {% begin %}
