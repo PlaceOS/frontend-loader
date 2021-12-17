@@ -42,6 +42,16 @@ module PlaceOS::FrontendLoader
 
     # Returns the release tags for a given repo
     def releases(repo : String) : Array(String)
+      # repo_id = get_repo_id(repo)
+      # @gitlab_client.tags(repo_id).as_a.map do |value|
+      #   value["name"].to_s
+      # end
+      # TO:DO
+      [""]
+    end
+
+    # Returns the tags for a given repo
+    def tags(repo : String) : Array(String)
       repo_id = get_repo_id(repo)
       @gitlab_client.tags(repo_id).as_a.map do |value|
         value["name"].to_s

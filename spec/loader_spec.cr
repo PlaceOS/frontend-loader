@@ -85,7 +85,7 @@ module PlaceOS::FrontendLoader
     end
 
     it "supports changing a uri" do
-      expected_uri = "https://github.com/placeOS/private-drivers"
+      expected_uri = "https://www.github.com/placeOS/private-drivers"
       repository.username = "robot@place.tech"
 
       loader = Loader.new
@@ -94,6 +94,7 @@ module PlaceOS::FrontendLoader
 
       repository.clear_changes_information
       repository.uri = expected_uri
+      repository.save!
       loader.process_resource(:updated, repository).success?.should be_true
 
       Dir.exists?(expected_path).should be_true
@@ -136,9 +137,10 @@ module PlaceOS::FrontendLoader
       end
 
       it "downloads the release asset on repo flag" do
-        repository = example_repository(LAB_TEST_FOLDER, uri: "https://gitlab.com/tassja/octokit.cr/")
+        repository = example_repository(LAB_TEST_FOLDER, uri: "https://www.github.com/tassja/octokit.cr")
         repository.release = true
-        ref = PlaceOS::FrontendLoader::Remote::Reference.new(repository)
+        repository.save!
+        ref = PlaceOS::FrontendLoader::Remote::Reference.from_repository(repository)
         expected_path = File.join(TEST_DIR, repository.folder_name)
         actioner = PlaceOS::FrontendLoader::Github.new
         actioner.download(ref: ref, path: expected_path)

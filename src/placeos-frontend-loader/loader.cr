@@ -72,14 +72,13 @@ module PlaceOS::FrontendLoader
 
     # Frontend loader implicitly and idempotently creates a base www
     protected def create_base_www
-      base_repo = Model::Repository.new(
+      Model::Repository.new(
         name: "PlaceOS/www-core",
         repo_type: Model::Repository::Type::Interface,
-        folder_name: content_directory.split("/").last,
+        folder_name: UUID.random.to_s,
         uri: BASE_REF,
-      )
-
-      base_ref = Remote::Reference.new(repository: base_repo)
+      ).save!
+      base_ref = Remote::Reference.new(url: BASE_REF, branch: "master")
       remotes[base_ref.remote_type].download(ref: base_ref, path: File.expand_path(content_directory))
     end
 
@@ -141,7 +140,7 @@ module PlaceOS::FrontendLoader
       unload(repository, content_directory) if repository.uri_changed? && Dir.exists?(repository_directory)
 
       # Download and extract the repository at given branch or commit
-      ref = Remote::Reference.new(repository: repository)
+      ref = Remote::Reference.from_repository(repository)
 
       current_remote = remotes[ref.remote_type]
 

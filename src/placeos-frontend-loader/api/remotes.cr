@@ -41,5 +41,17 @@ module PlaceOS::FrontendLoader::Api
       branches = remote.branches(repo_name)
       branches.nil? ? head :not_found : render json: branches
     end
+
+    # Returns an array of tags for a repository
+    get "/:repository_url/tags", :tags do
+      url = params["repository_url"]
+      uri = URI.parse(URI.decode_www_form(url))
+
+      remote = Remote.remote_for(uri)
+      repo_name = uri.path.strip("/")
+
+      tags = remote.tags(repo_name)
+      tags.nil? ? head :not_found : render json: tags
+    end
   end
 end

@@ -40,6 +40,15 @@ module PlaceOS::FrontendLoader
       releases
     end
 
+    # Returns the tags for a given repo
+    def tags(repo : String) : Array(String)
+      tags = Array(String).new
+      @github_client.tags(repo).fetch_all.map do |tag|
+        tags << tag.name.to_s
+      end
+      tags
+    end
+
     def download_latest_asset(repo : String, path : String)
       @github_client.latest_release_asset(repo, path)
     end
@@ -49,7 +58,7 @@ module PlaceOS::FrontendLoader
     end
 
     def url(repo_name : String) : String
-      "https://github.com/#{repo_name}"
+      "https://www.github.com/#{repo_name}"
     end
 
     def download(
@@ -70,7 +79,11 @@ module PlaceOS::FrontendLoader
           uri:        repository_uri,
         } }
 
-        if ref.repository.release
+        model = PlaceOS::Model::Repository.where(uri: repository_uri).first?
+
+        raise Exception.new("#{repository_uri} was not found in database") if model.nil?
+
+        if model.release
           Dir.mkdir_p(path) unless Dir.exists?(path)
           self.download_latest_asset(ref.repo_name, path)
         else

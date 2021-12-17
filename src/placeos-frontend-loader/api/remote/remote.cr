@@ -41,18 +41,16 @@ module PlaceOS::FrontendLoader
 
     def self.remote_for(repository_url : URI | String) : Remote
       uri = repository_url.is_a?(URI) ? repository_url : URI.parse(repository_url)
-
-      remote = {% begin %}
-        case uri.host.to_s
-          {% for remote in Reference::Type.constants %}
+      {% begin %}
+      case uri.host.to_s
+      {% for remote in Reference::Type.constants %}
         when .includes?(Reference::Type::{{ remote }}.to_s.downcase)
           PlaceOS::FrontendLoader::{{ remote.id }}.new
-        {% end %}
-        else
-          raise Exception.new("Host not supported: #{repository_url}")
-        end
-        {% end %}
-      remote
+      {% end %}
+      else
+        raise Exception.new("Host not supported: #{repository_url}")
+      end
+    {% end %}
     end
 
     struct Commit
@@ -74,7 +72,6 @@ module PlaceOS::FrontendLoader
         Github
       end
 
-      getter repository : Model::Repository
       getter repo_name : String
       getter remote_type : Reference::Type
       getter branch : String
@@ -94,25 +91,11 @@ module PlaceOS::FrontendLoader
             raise Exception.new("Host not supported: #{url}")
           end
           {% end %}
-        @repository = Model::Repository.new(name: @repo_name, folder_name: @repo_name, uri: uri, commit_hash: @hash, branch: branch)
       end
 
-      def initialize(@repository : Model::Repository, @tag : String? = nil)
-        url = repository.uri
-        @branch = repository.branch
-        uri = url.is_a?(URI) ? url : URI.parse(url)
-        @repo_name = uri.path.strip("/")
-        @remote_type = {% begin %}
-        case uri.host.to_s
-          {% for remote in Reference::Type.constants %}
-        when .includes?(Reference::Type::{{ remote }}.to_s.downcase)
-          Reference::Type::{{ remote.id }}
-        {% end %}
-        else
-          raise Exception.new("Host not supported: #{url}")
-        end
-        {% end %}
-        @hash = repository.should_pull? ? "HEAD" : repository.commit_hash
+      def self.from_repository(repository : Model::Repository)
+        hash = repository.should_pull? ? "HEAD" : repository.commit_hash
+        self.new(url: repository.uri, branch: repository.branch, hash: hash)
       end
     end
 
@@ -121,6 +104,8 @@ module PlaceOS::FrontendLoader
     abstract def branches(repo : String) : Hash(String, String)
 
     abstract def releases(repo : String) : Array(String)
+
+    abstract def tags(repo : String) : Array(String)
 
     abstract def download(ref : Reference, path : String, branch : String? = "master", hash : String? = "HEAD", tag : String? = nil)
 
