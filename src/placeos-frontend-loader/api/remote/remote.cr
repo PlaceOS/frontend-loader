@@ -123,7 +123,7 @@ module PlaceOS::FrontendLoader
                   next if parts.size == 0
                   file_path = Path.new([dest_path] + parts)
                   Dir.mkdir_p(file_path.dirname) unless Dir.exists?(file_path.dirname)
-                  File.write(file_path, entry.io, perm: entry.file_info.permissions)
+                  File.write(file_path, entry.io, perm: entry.file_info.permissions) unless Dir.exists?(file_path)
                 end
               end
             end

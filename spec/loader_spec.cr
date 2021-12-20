@@ -99,6 +99,7 @@ module PlaceOS::FrontendLoader
 
       Dir.exists?(expected_path).should be_true
       Api::Repositories.current_repo(expected_path).should end_with("private-drivers")
+      File.exists?("/app/test-www/test-repo/README.md").should be_true
     end
 
     describe "branches" do
