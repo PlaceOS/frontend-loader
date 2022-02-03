@@ -81,12 +81,7 @@ module PlaceOS::FrontendLoader
 
         model = PlaceOS::Model::Repository.where(uri: repository_uri).first?
 
-        raise Exception.new("#{repository_uri} was not found in database") if model.nil?
-
-        if model.release
-          Dir.mkdir_p(path) unless Dir.exists?(path)
-          self.download_latest_asset(ref.repo_name, path)
-        else
+        if model.nil? || !model.release
           hash = get_hash(hash, repository_uri, tag, branch)
           temp_tar_name = Random.rand(UInt32).to_s
           begin
@@ -97,6 +92,9 @@ module PlaceOS::FrontendLoader
           rescue ex : KeyError | File::Error
             Log.error(exception: ex) { "Could not download repository: #{ex.message}" }
           end
+        else
+          Dir.mkdir_p(path) unless Dir.exists?(path)
+          self.download_latest_asset(ref.repo_name, path)
         end
       end
     end
