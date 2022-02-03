@@ -33,6 +33,14 @@ shards:
     git: https://github.com/kostya/cron_parser.git
     version: 0.4.0
 
+  crunits:
+    git: https://github.com/spider-gazelle/crunits.git
+    version: 1.1.0
+
+  crystar:
+    git: https://github.com/naqvis/crystar.git
+    version: 0.2.0
+
   db:
     git: https://github.com/crystal-lang/crystal-db.git
     version: 0.11.0
@@ -121,13 +129,21 @@ shards:
     git: https://github.com/spider-gazelle/openssl_ext.git
     version: 2.1.5
 
+  pars:
+    git: https://github.com/place-labs/pars.git
+    version: 1.1.0
+
   placeos-compiler:
     git: https://github.com/placeos/compiler.git
     version: 4.8.1
 
+  placeos-core-client:
+    git: https://github.com/placeos/core-client.git
+    version: 0.3.2
+
   placeos-driver:
     git: https://github.com/placeos/driver.git
-    version: 5.9.9
+    version: 5.9.10
 
   placeos-log-backend:
     git: https://github.com/place-labs/log-backend.git
@@ -135,7 +151,7 @@ shards:
 
   placeos-models:
     git: https://github.com/placeos/models.git
-    version: 6.0.0
+    version: 6.0.1
 
   placeos-resource:
     git: https://github.com/place-labs/resource.git
@@ -160,6 +176,10 @@ shards:
   rendezvous-hash:
     git: https://github.com/caspiano/rendezvous-hash.git
     version: 0.3.1
+
+  responsible:
+    git: https://github.com/place-labs/responsible.git
+    version: 1.2.3
 
   rethinkdb:
     git: https://github.com/place-labs/crystal-rethinkdb.git
