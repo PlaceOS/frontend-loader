@@ -1,4 +1,4 @@
-ARG CRYSTAL_VERSION=1.1.1
+ARG CRYSTAL_VERSION=1.3.2
 FROM crystallang/crystal:${CRYSTAL_VERSION}-alpine as builder
 
 ARG PLACE_COMMIT="DEV"
@@ -25,7 +25,7 @@ WORKDIR /app
 RUN apk add --update --no-cache \
     'apk-tools>=2.10.8-r0' \
     ca-certificates \
-    'expat>=2.4.3-r0' \
+    'expat>=2.4.4-r0' \
     git \
     'libcurl>=7.79.1-r0' \
     openssh
