@@ -16,9 +16,9 @@ module PlaceOS::FrontendLoader::Api
 
     # Returns an array of commits for a repository
     get "/:folder_name/commits", :commits do
-      branch = params["branch"]?.presence || "master"
-      count = (params["count"]? || 50).to_i
       folder_name = params["folder_name"]
+      branch = params["branch"]?.presence || Repositories.default_branch(folder_name)
+      count = (params["count"]? || 50).to_i
       Log.context.set(branch: branch, count: count, folder: folder_name)
       commits = Repositories.commits(folder_name, branch, count)
 
@@ -76,6 +76,14 @@ module PlaceOS::FrontendLoader::Api
       loader
         .remote_for(remote_type)
         .releases(repo)[0...count]
+    end
+
+    def self.default_branch(folder, loader : Loader = Loader.instance) : String
+      metadata = Metadata.instance
+      repo = metadata.get_metadata(folder, "current_repo")
+      remote_type = metadata.remote_type(folder)
+      return "master" unless remote_type
+      loader.remote_for(remote_type).default_branch(repo)
     end
 
     # Returns a hash of folder name to commits

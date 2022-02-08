@@ -40,6 +40,10 @@ module PlaceOS::FrontendLoader
       end
     end
 
+    def default_branch(repo : String) : String
+      "master"
+    end
+
     # Returns the release tags for a given repo
     def releases(repo : String) : Array(String)
       # repo_id = get_repo_id(repo)

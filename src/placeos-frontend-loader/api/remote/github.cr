@@ -13,38 +13,63 @@ module PlaceOS::FrontendLoader
 
     # Returns the branches for a given repo
     def branches(repo : String) : Hash(String, String)
-      @github_client.branches(repo).fetch_all.each_with_object({} of String => String) do |branch, branches|
-        next if branch.name =~ /HEAD/
-        branches[branch.name] = branch.commit.sha
+      uri = "https://api.github.com/repos/#{repo}/branches"
+      response = HTTP::Client.get uri
+      raise Exception.new("status_code for #{uri} was #{response.status_code}") unless (response.success? || response.status_code == 302)
+      branches = Hash(String, String).new
+      Array(JSON::Any).from_json(response.body).map do |value|
+        branch_name = value["name"].to_s.strip.lchop("origin/")
+        branches[branch_name] = value["commit"]["sha"].to_s
       end
+      branches
     end
 
     # Returns the commits for a given repo on specified branch
     def commits(repo : String, branch : String) : Array(Remote::Commit)
-      @github_client.commits(repo, branch).fetch_all.map do |comm|
-        Remote::Commit.new(
-          commit: comm.sha,
-          date: comm.commit.author.date,
-          author: comm.commit.author.name,
-          subject: comm.commit.message,
+      url = "https://api.github.com/repos/#{repo}/commits?sha=#{branch}"
+      response = HTTP::Client.get url
+      raise Exception.new("status_code for #{url} was #{response.status_code}") unless (response.success? || response.status_code == 302)
+      commits = Array(Remote::Commit).new
+      Array(JSON::Any).from_json(response.body).map do |value|
+        commit = Remote::Commit.new(
+          commit: value["sha"].as_s,
+          date: value["commit"]["author"]["date"].as_s,
+          author: value["commit"]["author"]["name"].as_s,
+          subject: value["commit"]["message"].as_s.strip(%(\n))
         )
+        commits << commit
       end
+      commits
+    end
+
+    def default_branch(repo : String) : String
+      url = "https://api.github.com/repos/#{repo}"
+      response = HTTP::Client.get url
+      raise Exception.new("status_code for #{url} was #{response.status_code}") unless (response.success? || response.status_code == 302)
+      parsed = JSON::Any.from_json(response.body)
+      parsed["default_branch"].to_s || "master"
     end
 
     # Returns the release tags for a given repo
     def releases(repo : String) : Array(String)
+      url = "https://api.github.com/repos/#{repo}/releases"
+      response = HTTP::Client.get url
+      raise Exception.new("status_code for #{url} was #{response.status_code}") unless (response.success? || response.status_code == 302)
       releases = Array(String).new
-      @github_client.releases(repo).fetch_all.map do |rel|
-        releases << rel.name.to_s
+      Array(JSON::Any).from_json(response.body).map do |rel|
+        releases << rel["tag_name"].as_s
       end
       releases
     end
 
     # Returns the tags for a given repo
     def tags(repo : String) : Array(String)
+      url = "https://api.github.com/repos/#{repo}/tags"
+      response = HTTP::Client.get url
+      raise Exception.new("status_code for #{url} was #{response.status_code}") unless (response.success? || response.status_code == 302)
       tags = Array(String).new
-      @github_client.tags(repo).fetch_all.map do |tag|
-        tags << tag.name.to_s
+      Array(JSON::Any).from_json(response.body).map do |value|
+        tags << value["name"].as_s
       end
       tags
     end

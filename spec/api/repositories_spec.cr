@@ -10,6 +10,16 @@ module PlaceOS::FrontendLoader::Api
       commits.should_not be_empty
     end
 
+    it "gets the default branch if not master" do
+      repository = example_repository(TEST_FOLDER, uri: "https://www.github.com/placeos/backoffice")
+
+      loader = Loader.new
+      loader.process_resource(:created, repository).success?.should be_true
+      branch = Api::Repositories.default_branch(repository.folder_name, loader: loader)
+      commits = Api::Repositories.commits(repository.folder_name, branch, loader: loader).not_nil!
+      commits.should_not be_empty
+    end
+
     it "lists branches for a loaded repository" do
       repository = example_repository(TEST_FOLDER)
       loader = Loader.new

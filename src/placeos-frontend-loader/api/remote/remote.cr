@@ -107,6 +107,8 @@ module PlaceOS::FrontendLoader
 
     abstract def tags(repo : String) : Array(String)
 
+    abstract def default_branch(repo : String) : String
+
     abstract def download(ref : Reference, path : String, branch : String? = "master", hash : String? = "HEAD", tag : String? = nil)
 
     def extract_archive(dest_path : String, temp_tar_name : String)
