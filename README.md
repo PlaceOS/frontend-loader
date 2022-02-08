@@ -1,7 +1,7 @@
 # PlaceOS Frontend Loader
 
-[![Build Dev Image](https://github.com/PlaceOS/frontends/actions/workflows/build-dev-image.yml/badge.svg)](https://github.com/PlaceOS/frontends/actions/workflows/build-dev-image.yml)
-[![CI](https://github.com/PlaceOS/frontends/actions/workflows/ci.yml/badge.svg)](https://github.com/PlaceOS/frontends/actions/workflows/ci.yml)
+[![Build](https://github.com/PlaceOS/frontend-loader/actions/workflows/build.yml/badge.svg)](https://github.com/PlaceOS/frontend-loader/actions/workflows/build.yml)
+[![CI](https://github.com/PlaceOS/frontend-loader/actions/workflows/ci.yml/badge.svg)](https://github.com/PlaceOS/frontend-loader/actions/workflows/ci.yml)
 
 ![suprisingly, a frontend loader!](./logo.svg)
 
@@ -27,7 +27,7 @@ Included is a simple client that can be configured via the `PLACE_LOADER_URI` en
 require "placeos-frontend-loader/client"
 
 # One-shot
-commits = PlaceOS::Frontends::Client.client do |client|
+commits = PlaceOS::FrontendLoader::Client.client do |client|
     client.commits("backoffice")
 end
 
@@ -47,7 +47,7 @@ client.close
 
 ## Contributing
 
-1. [Fork it](https://github.com/placeos/frontends/fork)
+1. [Fork it](https://github.com/placeos/frontend-loader/fork)
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
