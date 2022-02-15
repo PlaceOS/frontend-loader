@@ -33,9 +33,7 @@ module PlaceOS::FrontendLoader
       @gitlab_client.commits(repo_id).as_a.map do |comm|
         Remote::Commit.new(
           commit: comm["id"].as_s,
-          date: comm["authored_date"].as_s,
-          author: comm["author_email"].as_s,
-          subject: comm["title"].as_s
+          name: comm["title"].as_s
         )
       end
     end

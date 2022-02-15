@@ -56,11 +56,9 @@ module PlaceOS::FrontendLoader
     struct Commit
       include JSON::Serializable
       getter commit : String
-      getter date : String
-      getter author : String
-      getter subject : String
+      getter name : String
 
-      def initialize(@commit, @date, @author, @subject)
+      def initialize(@commit, @name)
       end
     end
 
@@ -161,8 +159,9 @@ module PlaceOS::FrontendLoader
     end
 
     private def get_commit_hashes(repo_url : String)
+      uri = repo_url.gsub("www.", "")
       stdout = IO::Memory.new
-      Process.new("git", ["ls-remote", repo_url], output: stdout).wait
+      Process.new("git", ["ls-remote", uri], output: stdout).wait
       output = stdout.to_s.split('\n')
       output.compact_map do |ref|
         next if ref.empty?

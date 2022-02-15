@@ -49,7 +49,7 @@ module PlaceOS::FrontendLoader
       params["count"] = count.to_s unless count.nil?
       path = "/repositories/#{folder_name}/commits?#{params}"
       response = get(path)
-      Array(NamedTuple(commit: String, date: String, author: String, subject: String)).from_json(response.body)
+      Array(NamedTuple(commit: String, name: String)).from_json(response.body)
     end
 
     # Branches for a frontend folder
