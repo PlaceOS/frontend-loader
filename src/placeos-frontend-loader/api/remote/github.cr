@@ -33,9 +33,7 @@ module PlaceOS::FrontendLoader
       Array(JSON::Any).from_json(response.body).map do |value|
         commit = Remote::Commit.new(
           commit: value["sha"].as_s,
-          date: value["commit"]["author"]["date"].as_s,
-          author: value["commit"]["author"]["name"].as_s,
-          subject: value["commit"]["message"].as_s.strip(%(\n))
+          name: value["commit"]["message"].as_s.strip(%(\n))
         )
         commits << commit
       end

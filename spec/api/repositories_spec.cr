@@ -27,7 +27,6 @@ module PlaceOS::FrontendLoader::Api
       branches = Api::Repositories.branches(repository.folder_name, loader).not_nil!
       branches.should_not be_empty
       branches.should contain("master")
-      puts branches
     end
 
     it "lists current commit for all loaded repositories" do
