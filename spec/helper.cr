@@ -9,6 +9,40 @@ require "spec"
 
 TEST_DIR = "test-www"
 
+module ExecFrom
+  def self.exec_from(
+    directory : String,
+    command : String,
+    arguments : Enumerable(String) = [] of String,
+    environment : Process::Env = nil,
+    clear_environment : Bool = false,
+    capture_stderr : Bool = true,
+    input : IO | Process::Redirect = Process::Redirect::Close,
+    output : IO = IO::Memory.new
+  ) : Result
+    puts "\n\n====\n"
+    pp! directory
+    pp! Dir.current
+    pp! Dir.entries("bin")
+    pp! File.exists?("./bin/exec_from")
+    pp! File.executable?("./bin/exec_from")
+    pp! File.info("./bin/exec_from").permissions
+    puts "\n===="
+
+    status = Process.run(
+      command: Path["./bin/exec_from"].expand.to_s,
+      args: [directory, command].concat(arguments),
+      input: Process::Redirect::Close,
+      env: environment,
+      clear_env: clear_environment,
+      output: output,
+      error: capture_stderr ? output : Process::Redirect::Close,
+    )
+
+    Result.new(status, output)
+  end
+end
+
 Spec.before_suite do
   Log.builder.bind "*", :trace, PlaceOS::LogBackend.log_backend
   reset
