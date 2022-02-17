@@ -16,9 +16,9 @@ module PlaceOS::FrontendLoader::Api
 
     # Returns an array of commits for a repository
     get "/:folder_name/commits", :commits do
-      folder_name = params["folder_name"]
-      branch = params["branch"]?.presence || nil
+      branch = params["branch"]?.presence || "master"
       count = (params["count"]? || 50).to_i
+      folder_name = params["folder_name"]
       Log.context.set(branch: branch, count: count, folder: folder_name)
       commits = Repositories.commits(folder_name, branch, count)
 
@@ -30,28 +30,9 @@ module PlaceOS::FrontendLoader::Api
       repo = metadata.get_metadata(folder, "current_repo")
       remote_type = metadata.remote_type(folder)
       return unless remote_type
-      repository_uri = loader.remote_for(remote_type).url(repo)
-      repository_uri = "#{repository_uri}/tree/#{branch}" if branch != loader.remote_for(remote_type).default_branch(repo)
-
-      commits = Array(Remote::Commit).new
-      Repositories.get_commit_hashes(repository_uri).each do |name, hash|
-        commit = Remote::Commit.new(
-          commit: hash,
-          name: name.split("refs/heads/", limit: 2).last
-        )
-        commits << commit
-      end
-      commits[0...count]
-    end
-
-    def self.get_commit_hashes(repo_url : String)
-      stdout = IO::Memory.new
-      Process.new("git", ["ls-remote", repo_url], output: stdout).wait
-      output = stdout.to_s.split('\n')
-      output.compact_map do |ref|
-        next if ref.empty?
-        ref.split('\t', limit: 2).reverse
-      end.to_h
+      loader
+        .remote_for(remote_type)
+        .commits(repo, branch)[0...count]
     end
 
     # Returns an array of branches for a repository
@@ -69,14 +50,9 @@ module PlaceOS::FrontendLoader::Api
       repo = metadata.get_metadata(folder, "current_repo")
       remote_type = metadata.remote_type(folder)
       return unless remote_type
-      repository_uri = loader.remote_for(remote_type).url(repo)
-
-      branches = Array(String).new
-      Repositories.get_commit_hashes(repository_uri).each_key do |name|
-        next if !name.includes?("refs/heads")
-        branches << name.split("refs/heads/", limit: 2).last
-      end
-      branches.sort!.uniq!
+      loader
+        .remote_for(remote_type)
+        .branches(repo)
     end
 
     get "/:folder_name/releases", :branches do
@@ -94,14 +70,9 @@ module PlaceOS::FrontendLoader::Api
       repo = metadata.get_metadata(folder, "current_repo")
       remote_type = metadata.remote_type(folder)
       return unless remote_type
-      repository_uri = loader.remote_for(remote_type).url(repo)
-
-      releases = Array(String).new
-      Repositories.get_commit_hashes(repository_uri).each_key do |name|
-        next if !name.includes?("refs/tags/")
-        releases << name.split("refs/tags/", limit: 2).last
-      end
-      releases[0...count]
+      loader
+        .remote_for(remote_type)
+        .releases(repo)[0...count]
     end
 
     def self.default_branch(folder, loader : Loader = Loader.instance) : String

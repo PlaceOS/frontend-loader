@@ -22,7 +22,7 @@ module PlaceOS::FrontendLoader::Api
         encoded_url = URI.encode_www_form("https://www.github.com/PlaceOS/frontend-loader")
         route = "#{remotes_base}/#{encoded_url}/branches"
         result = curl("GET", route)
-        Hash(String, String).from_json(result.body).has_key?("master").should be_true
+        Array(String).from_json(result.body).includes?("master").should be_true
       end
 
       it "lists tags for a given repository" do

@@ -19,12 +19,14 @@ module PlaceOS::FrontendLoader
     end
 
     # Returns the branches for a given repo
-    def branches(repo : String) : Hash(String, String)
+    def branches(repo : String) : Array(String)
       repo_id = get_repo_id(repo)
       @gitlab_client.branches(repo_id).as_a.each_with_object({} of String => String) do |branch, branches|
         branch_name = branch["name"].to_s
         branches[branch_name] = branch["commit"]["id"].to_s
-      end
+      end.keys
+        .sort!
+        .uniq!
     end
 
     # Returns the commits for a given repo on specified branch
@@ -48,7 +50,7 @@ module PlaceOS::FrontendLoader
       # @gitlab_client.tags(repo_id).as_a.map do |value|
       #   value["name"].to_s
       # end
-      # TO:DO
+      # TODO
       [""]
     end
 

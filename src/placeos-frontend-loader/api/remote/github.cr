@@ -12,30 +12,35 @@ module PlaceOS::FrontendLoader
     @github_client = Octokit.client(GIT_USER, GIT_PASS)
 
     # Returns the branches for a given repo
-    def branches(repo : String) : Hash(String, String)
-      uri = "https://api.github.com/repos/#{repo}/branches"
-      response = HTTP::Client.get uri
-      raise Exception.new("status_code for #{uri} was #{response.status_code}") unless (response.success? || response.status_code == 302)
-      branches = Hash(String, String).new
-      Array(JSON::Any).from_json(response.body).map do |value|
-        branch_name = value["name"].to_s.strip.lchop("origin/")
-        branches[branch_name] = value["commit"]["sha"].to_s
+    def branches(repo : String) : Array(String)
+      repository_uri = url(repo)
+      branches = Array(String).new
+      get_commit_hashes(repository_uri).each_key do |name|
+        next if !name.includes?("refs/heads")
+        branches << name.split("refs/heads/", limit: 2).last
       end
-      branches
+      branches.sort!.uniq!
     end
 
     # Returns the commits for a given repo on specified branch
     def commits(repo : String, branch : String) : Array(Remote::Commit)
-      url = "https://api.github.com/repos/#{repo}/commits?sha=#{branch}"
-      response = HTTP::Client.get url
-      raise Exception.new("status_code for #{url} was #{response.status_code}") unless (response.success? || response.status_code == 302)
       commits = Array(Remote::Commit).new
-      Array(JSON::Any).from_json(response.body).map do |value|
+      repository_uri = url(repo)
+      if !branch.nil?
+        hash = get_commit_hashes(repository_uri, branch)
         commit = Remote::Commit.new(
-          commit: value["sha"].as_s,
-          name: value["commit"]["message"].as_s.strip(%(\n))
+          commit: hash,
+          name: branch
         )
         commits << commit
+      else
+        get_commit_hashes(repository_uri).each do |name, hash|
+          commit = Remote::Commit.new(
+            commit: hash,
+            name: name.split("refs/heads/", limit: 2).last
+          )
+          commits << commit
+        end
       end
       commits
     end
@@ -45,17 +50,16 @@ module PlaceOS::FrontendLoader
       response = HTTP::Client.get url
       raise Exception.new("status_code for #{url} was #{response.status_code}") unless (response.success? || response.status_code == 302)
       parsed = JSON::Any.from_json(response.body)
-      parsed["default_branch"].to_s || "master"
+      parsed["default_branch"]?.try(&.to_s) || "master"
     end
 
     # Returns the release tags for a given repo
     def releases(repo : String) : Array(String)
-      url = "https://api.github.com/repos/#{repo}/releases"
-      response = HTTP::Client.get url
-      raise Exception.new("status_code for #{url} was #{response.status_code}") unless (response.success? || response.status_code == 302)
+      repository_uri = url(repo)
       releases = Array(String).new
-      Array(JSON::Any).from_json(response.body).map do |rel|
-        releases << rel["tag_name"].as_s
+      get_commit_hashes(repository_uri).each_key do |name|
+        next if !name.includes?("refs/tags/")
+        releases << name.split("refs/tags/", limit: 2).last
       end
       releases
     end

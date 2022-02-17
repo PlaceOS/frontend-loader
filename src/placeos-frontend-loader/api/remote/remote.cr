@@ -99,7 +99,7 @@ module PlaceOS::FrontendLoader
 
     abstract def commits(repo : String, branch : String) : Array(Commit)
 
-    abstract def branches(repo : String) : Hash(String, String)
+    abstract def branches(repo : String) : Array(String)
 
     abstract def releases(repo : String) : Array(String)
 
@@ -158,7 +158,7 @@ module PlaceOS::FrontendLoader
       metadata.set_metadata(repo_path, "remote_type", type)
     end
 
-    private def get_commit_hashes(repo_url : String)
+    def get_commit_hashes(repo_url : String)
       uri = repo_url.gsub("www.", "")
       stdout = IO::Memory.new
       Process.new("git", ["ls-remote", uri], output: stdout).wait
@@ -167,6 +167,12 @@ module PlaceOS::FrontendLoader
         next if ref.empty?
         ref.split('\t', limit: 2).reverse
       end.to_h
+    end
+
+    def get_commit_hashes(repo_url : String, branch : String)
+      ref_hash = get_commit_hashes(repo_url)
+      raise KeyError.new("Branch #{branch} does not exist in repo") unless ref_hash.has_key?("refs/heads/#{branch}")
+      ref_hash["refs/heads/#{branch}"]
     end
 
     private def get_hash_head(repo_url : String)
