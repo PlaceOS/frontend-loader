@@ -184,7 +184,7 @@ module PlaceOS::FrontendLoader
 
     private def get_hash_head(repo_url : String)
       ref_hash = get_commit_hashes(repo_url)
-      ref_hash.has_key?("HEAD") ? ref_hash["HEAD"] : ref_hash.first_key?
+      ref_hash["HEAD"]? || ref_hash.first_key
     end
 
     private def get_hash_by_branch(repo_url : String, branch : String)
