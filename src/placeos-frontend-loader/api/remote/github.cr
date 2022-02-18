@@ -1,6 +1,7 @@
 require "hash_file"
-require "./remote"
 require "octokit"
+
+require "./remote"
 
 module PlaceOS::FrontendLoader
   class Github < Remote
@@ -11,9 +12,11 @@ module PlaceOS::FrontendLoader
 
     @github_client = Octokit.client(GIT_USER, GIT_PASS)
 
+    # TODO: This doesn't handle missing repositories
     def default_branch(repo : String) : String
       url = "https://api.github.com/repos/#{repo}"
-      response = HTTP::Client.get url
+      response = Crest.get(url, handle_errors: false)
+
       raise Exception.new("status_code for #{url} was #{response.status_code}") unless (response.success? || response.status_code == 302)
 
       parsed = NamedTuple(default_branch: String?).from_json(response.body)
@@ -73,18 +76,6 @@ module PlaceOS::FrontendLoader
           self.download_latest_asset(ref.repo_name, path)
         end
       end
-    end
-
-    def download_archive(url : String, temp_tar_name : String)
-      HTTP::Client.get(url) do |redirect_response|
-        raise HTTP::Server::ClientError.new("status_code for #{url} was #{redirect_response.status_code}") unless (redirect_response.success? || redirect_response.status_code == 302)
-        HTTP::Client.get(redirect_response.headers["location"]) do |response|
-          File.write(temp_tar_name, response.body_io)
-        end
-      end
-      File.new(temp_tar_name)
-    rescue ex : File::Error | HTTP::Server::ClientError
-      Log.error(exception: ex) { "Could not download file at URL: #{ex.message}" }
     end
   end
 end

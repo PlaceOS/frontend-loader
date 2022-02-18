@@ -79,15 +79,5 @@ module PlaceOS::FrontendLoader
         end
       end
     end
-
-    def download_archive(url : String, temp_tar_name : String)
-      HTTP::Client.get(url) do |response|
-        raise Exception.new("status_code for #{url} was #{response.status_code}") unless response.status_code < 400
-        File.write(temp_tar_name, response.body_io)
-      end
-      File.new(temp_tar_name)
-    rescue ex : File::Error | HTTP::Server::ClientError
-      Log.error(exception: ex) { "Could not download file at URL: #{ex.message}" }
-    end
   end
 end
