@@ -61,7 +61,7 @@ module PlaceOS::FrontendLoader
         model = PlaceOS::Model::Repository.where(uri: repository_uri).first?
 
         if model.nil? || !model.release
-          hash = get_hash(hash, repository_uri, tag, branch).as(String)
+          hash = get_hash(hash, repository_uri, tag, branch)
           temp_tar_name = Random.rand(UInt32).to_s
           begin
             archive_url = "https://github.com/#{ref.repo_name}/archive/#{hash}.tar.gz"

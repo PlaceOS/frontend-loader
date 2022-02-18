@@ -151,20 +151,18 @@ module PlaceOS::FrontendLoader
     ###############################################################################################
 
     # grabs the commit sha needed for repo download based on provided tag/branch or defaults to latest commit
-    def get_hash(hash : String, repository_uri : String, tag : String?, branch : String)
+    def get_hash(hash : String, repository_uri : String, tag : String?, branch : String) : String
       if hash == "HEAD"
-        if (!tag.nil?)
+        if !tag.nil?
           get_hash_by_tag(repository_uri, tag)
         else
           get_hash_by_branch(repository_uri, branch)
         end
-      end
-    rescue ex : KeyError
-      if hash.nil?
-        get_hash_head(repository_uri)
       else
         hash
       end
+    rescue ex : KeyError
+      get_hash_head(repository_uri)
     end
 
     def get_commit_hashes(repo_url : String)

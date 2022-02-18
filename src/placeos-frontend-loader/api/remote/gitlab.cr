@@ -24,13 +24,13 @@ module PlaceOS::FrontendLoader
       "master"
     end
 
+    # TODO: Implement
     # Returns the release tags for a given repo
     def releases(repo : String) : Array(String)
       # repo_id = get_repo_id(repo)
       # @gitlab_client.tags(repo_id).as_a.map do |value|
       #   value["name"].to_s
       # end
-      # TODO: Impl
       [""]
     end
 
@@ -56,7 +56,7 @@ module PlaceOS::FrontendLoader
       repository_uri = url(ref.repo_name)
       repository_folder_name = path.split("/").last
 
-      hash = get_hash(hash, repository_uri, tag, branch).as(String)
+      hash = get_hash(hash, repository_uri, tag, branch)
       temp_tar_name = Random.rand(UInt32).to_s
 
       Git.repository_lock(repository_folder_name).write do
