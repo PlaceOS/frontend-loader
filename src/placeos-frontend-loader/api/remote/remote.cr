@@ -1,3 +1,5 @@
+require "json"
+
 module PlaceOS::FrontendLoader
   class Metadata
     private getter hash_file : HashFile = HashFile
@@ -97,13 +99,41 @@ module PlaceOS::FrontendLoader
       end
     end
 
-    abstract def commits(repo : String, branch : String) : Array(Commit)
+    # Returns the commits for a given repo on specified branch
+    def commits(repo : String, branch : String) : Array(Remote::Commit)
+      repository_uri = url(repo)
 
-    abstract def branches(repo : String) : Array(String)
+      if branch.nil?
+        get_commit_hashes(repository_uri).map do |name, commit|
+          Remote::Commit.new(
+            commit: commit,
+            name: name.split("refs/heads/", limit: 2).last
+          )
+        end
+      else
+        commit = Remote::Commit.new(
+          commit: get_commit_hashes(repository_uri, branch),
+          name: branch
+        )
+        [commit]
+      end
+    end
+
+    # Returns the branches for a given repo
+    def branches(repo : String) : Array(String)
+      get_commit_hashes(url(repo)).keys.compact_map do |name|
+        name.split("refs/heads/", limit: 2).last if name.includes?("refs/heads")
+      end.sort!.uniq!
+    end
 
     abstract def releases(repo : String) : Array(String)
 
-    abstract def tags(repo : String) : Array(String)
+    # Returns the tags for a given repo
+    def tags(repo : String) : Array(String)
+      get_commit_hashes(url(repo)).keys.compact_map do |name|
+        name.split("refs/tags/", limit: 2).last if name.includes?("refs/tags/")
+      end
+    end
 
     abstract def default_branch(repo : String) : String
 
@@ -137,18 +167,19 @@ module PlaceOS::FrontendLoader
 
     # grabs the commit sha needed for repo download based on provided tag/branch or defaults to latest commit
     def get_hash(hash : String, repository_uri : String, tag : String?, branch : String)
-      begin
-        if hash == "HEAD"
-          if (!tag.nil?)
-            hash = get_hash_by_tag(repository_uri, tag)
-          else
-            hash = get_hash_by_branch(repository_uri, branch)
-          end
+      if hash == "HEAD"
+        if (!tag.nil?)
+          get_hash_by_tag(repository_uri, tag)
+        else
+          get_hash_by_branch(repository_uri, branch)
         end
-      rescue ex : KeyError
-        hash = get_hash_head(repository_uri) if hash.nil?
       end
-      hash.not_nil!
+    rescue ex : KeyError
+      if hash.nil?
+        get_hash_head(repository_uri)
+      else
+        hash
+      end
     end
 
     def save_metadata(repo_path : String, hash : String, repository_uri : String, branch : String, type : Remote::Reference::Type)

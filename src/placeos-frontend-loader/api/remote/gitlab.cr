@@ -1,6 +1,7 @@
 require "hash_file"
-require "./remote"
 require "gitlab"
+
+require "./remote"
 
 module PlaceOS::FrontendLoader
   class GitLab < PlaceOS::FrontendLoader::Remote
@@ -18,29 +19,8 @@ module PlaceOS::FrontendLoader
       @gitlab_client.project(repo)["id"].to_s.to_i
     end
 
-    # Returns the branches for a given repo
-    def branches(repo : String) : Array(String)
-      repo_id = get_repo_id(repo)
-      @gitlab_client.branches(repo_id).as_a.each_with_object({} of String => String) do |branch, branches|
-        branch_name = branch["name"].to_s
-        branches[branch_name] = branch["commit"]["id"].to_s
-      end.keys
-        .sort!
-        .uniq!
-    end
-
-    # Returns the commits for a given repo on specified branch
-    def commits(repo : String, branch : String = "master") : Array(Remote::Commit)
-      repo_id = get_repo_id(repo)
-      @gitlab_client.commits(repo_id).as_a.map do |comm|
-        Remote::Commit.new(
-          commit: comm["id"].as_s,
-          name: comm["title"].as_s
-        )
-      end
-    end
-
     def default_branch(repo : String) : String
+      # TODO: Determine the default from the remote
       "master"
     end
 
@@ -50,7 +30,7 @@ module PlaceOS::FrontendLoader
       # @gitlab_client.tags(repo_id).as_a.map do |value|
       #   value["name"].to_s
       # end
-      # TODO
+      # TODO: Impl
       [""]
     end
 
@@ -76,7 +56,7 @@ module PlaceOS::FrontendLoader
       repository_uri = url(ref.repo_name)
       repository_folder_name = path.split("/").last
 
-      hash = get_hash(hash, repository_uri, tag, branch)
+      hash = get_hash(hash, repository_uri, tag, branch).as(String)
       temp_tar_name = Random.rand(UInt32).to_s
 
       Git.repository_lock(repository_folder_name).write do

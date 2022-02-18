@@ -11,69 +11,18 @@ module PlaceOS::FrontendLoader
 
     @github_client = Octokit.client(GIT_USER, GIT_PASS)
 
-    # Returns the branches for a given repo
-    def branches(repo : String) : Array(String)
-      repository_uri = url(repo)
-      branches = Array(String).new
-      get_commit_hashes(repository_uri).each_key do |name|
-        next if !name.includes?("refs/heads")
-        branches << name.split("refs/heads/", limit: 2).last
-      end
-      branches.sort!.uniq!
-    end
-
-    # Returns the commits for a given repo on specified branch
-    def commits(repo : String, branch : String) : Array(Remote::Commit)
-      commits = Array(Remote::Commit).new
-      repository_uri = url(repo)
-      if !branch.nil?
-        hash = get_commit_hashes(repository_uri, branch)
-        commit = Remote::Commit.new(
-          commit: hash,
-          name: branch
-        )
-        commits << commit
-      else
-        get_commit_hashes(repository_uri).each do |name, hash|
-          commit = Remote::Commit.new(
-            commit: hash,
-            name: name.split("refs/heads/", limit: 2).last
-          )
-          commits << commit
-        end
-      end
-      commits
-    end
-
     def default_branch(repo : String) : String
       url = "https://api.github.com/repos/#{repo}"
       response = HTTP::Client.get url
       raise Exception.new("status_code for #{url} was #{response.status_code}") unless (response.success? || response.status_code == 302)
-      parsed = JSON::Any.from_json(response.body)
-      parsed["default_branch"]?.try(&.to_s) || "master"
+
+      parsed = NamedTuple(default_branch: String?).from_json(response.body)
+      parsed[:default_branch] || "master"
     end
 
     # Returns the release tags for a given repo
     def releases(repo : String) : Array(String)
-      repository_uri = url(repo)
-      releases = Array(String).new
-      get_commit_hashes(repository_uri).each_key do |name|
-        next if !name.includes?("refs/tags/")
-        releases << name.split("refs/tags/", limit: 2).last
-      end
-      releases
-    end
-
-    # Returns the tags for a given repo
-    def tags(repo : String) : Array(String)
-      url = "https://api.github.com/repos/#{repo}/tags"
-      response = HTTP::Client.get url
-      raise Exception.new("status_code for #{url} was #{response.status_code}") unless (response.success? || response.status_code == 302)
-      tags = Array(String).new
-      Array(JSON::Any).from_json(response.body).map do |value|
-        tags << value["name"].as_s
-      end
-      tags
+      tags(repo)
     end
 
     def download_latest_asset(repo : String, path : String)
@@ -109,7 +58,7 @@ module PlaceOS::FrontendLoader
         model = PlaceOS::Model::Repository.where(uri: repository_uri).first?
 
         if model.nil? || !model.release
-          hash = get_hash(hash, repository_uri, tag, branch)
+          hash = get_hash(hash, repository_uri, tag, branch).as(String)
           temp_tar_name = Random.rand(UInt32).to_s
           begin
             archive_url = "https://github.com/#{ref.repo_name}/archive/#{hash}.tar.gz"
