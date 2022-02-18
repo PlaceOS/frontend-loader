@@ -1,6 +1,7 @@
 require "hash_file"
-require "./remote"
 require "octokit"
+
+require "./remote"
 
 module PlaceOS::FrontendLoader
   class Github < Remote
@@ -11,69 +12,20 @@ module PlaceOS::FrontendLoader
 
     @github_client = Octokit.client(GIT_USER, GIT_PASS)
 
-    # Returns the branches for a given repo
-    def branches(repo : String) : Array(String)
-      repository_uri = url(repo)
-      branches = Array(String).new
-      get_commit_hashes(repository_uri).each_key do |name|
-        next if !name.includes?("refs/heads")
-        branches << name.split("refs/heads/", limit: 2).last
-      end
-      branches.sort!.uniq!
-    end
-
-    # Returns the commits for a given repo on specified branch
-    def commits(repo : String, branch : String) : Array(Remote::Commit)
-      commits = Array(Remote::Commit).new
-      repository_uri = url(repo)
-      if !branch.nil?
-        hash = get_commit_hashes(repository_uri, branch)
-        commit = Remote::Commit.new(
-          commit: hash,
-          name: branch
-        )
-        commits << commit
-      else
-        get_commit_hashes(repository_uri).each do |name, hash|
-          commit = Remote::Commit.new(
-            commit: hash,
-            name: name.split("refs/heads/", limit: 2).last
-          )
-          commits << commit
-        end
-      end
-      commits
-    end
-
+    # TODO: This doesn't handle missing repositories
     def default_branch(repo : String) : String
       url = "https://api.github.com/repos/#{repo}"
-      response = HTTP::Client.get url
+      response = Crest.get(url, handle_errors: false)
+
       raise Exception.new("status_code for #{url} was #{response.status_code}") unless (response.success? || response.status_code == 302)
-      parsed = JSON::Any.from_json(response.body)
-      parsed["default_branch"]?.try(&.to_s) || "master"
+
+      parsed = NamedTuple(default_branch: String?).from_json(response.body)
+      parsed[:default_branch] || "master"
     end
 
     # Returns the release tags for a given repo
     def releases(repo : String) : Array(String)
-      repository_uri = url(repo)
-      releases = Array(String).new
-      get_commit_hashes(repository_uri).each_key do |name|
-        next if !name.includes?("refs/tags/")
-        releases << name.split("refs/tags/", limit: 2).last
-      end
-      releases
-    end
-
-    # Returns the tags for a given repo
-    def tags(repo : String) : Array(String)
-      url = "https://api.github.com/repos/#{repo}/tags"
-      response = HTTP::Client.get url
-      raise Exception.new("status_code for #{url} was #{response.status_code}") unless (response.success? || response.status_code == 302)
-      tags = Array(String).new
-      Array(JSON::Any).from_json(response.body).map do |value|
-        tags << value["name"].as_s
-      end
-      tags
+      tags(repo)
     end
 
     def download_latest_asset(repo : String, path : String)
@@ -124,18 +76,6 @@ module PlaceOS::FrontendLoader
           self.download_latest_asset(ref.repo_name, path)
         end
       end
-    end
-
-    def download_archive(url : String, temp_tar_name : String)
-      HTTP::Client.get(url) do |redirect_response|
-        raise HTTP::Server::ClientError.new("status_code for #{url} was #{redirect_response.status_code}") unless (redirect_response.success? || redirect_response.status_code == 302)
-        HTTP::Client.get(redirect_response.headers["location"]) do |response|
-          File.write(temp_tar_name, response.body_io)
-        end
-      end
-      File.new(temp_tar_name)
-    rescue ex : File::Error | HTTP::Server::ClientError
-      Log.error(exception: ex) { "Could not download file at URL: #{ex.message}" }
     end
   end
 end

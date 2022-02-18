@@ -1,3 +1,6 @@
+require "crest"
+require "json"
+
 module PlaceOS::FrontendLoader
   class Metadata
     private getter hash_file : HashFile = HashFile
@@ -97,17 +100,117 @@ module PlaceOS::FrontendLoader
       end
     end
 
-    abstract def commits(repo : String, branch : String) : Array(Commit)
+    # Returns the commits for a given repo on specified branch
+    def commits(repo : String, branch : String) : Array(Remote::Commit)
+      repository_uri = url(repo)
 
-    abstract def branches(repo : String) : Array(String)
+      if branch.nil?
+        get_commit_hashes(repository_uri).map do |name, commit|
+          Remote::Commit.new(
+            commit: commit,
+            name: name.split("refs/heads/", limit: 2).last
+          )
+        end
+      else
+        commit = Remote::Commit.new(
+          commit: get_commit_hashes(repository_uri, branch),
+          name: branch
+        )
+        [commit]
+      end
+    end
+
+    # Returns the branches for a given repo
+    def branches(repo : String) : Array(String)
+      get_commit_hashes(url(repo)).keys.compact_map do |name|
+        name.split("refs/heads/", limit: 2).last if name.includes?("refs/heads")
+      end.sort!.uniq!
+    end
 
     abstract def releases(repo : String) : Array(String)
 
-    abstract def tags(repo : String) : Array(String)
+    # Returns the tags for a given repo
+    def tags(repo : String) : Array(String)
+      get_commit_hashes(url(repo)).keys.compact_map do |name|
+        name.split("refs/tags/", limit: 2).last if name.includes?("refs/tags/")
+      end
+    end
 
     abstract def default_branch(repo : String) : String
 
     abstract def download(ref : Reference, path : String, branch : String? = "master", hash : String? = "HEAD", tag : String? = nil)
+
+    def save_metadata(repo_path : String, hash : String, repository_uri : String, branch : String, type : Remote::Reference::Type)
+      metadata.set_metadata(repo_path, "current_hash", hash)
+      metadata.set_metadata(repo_path, "current_repo", repository_uri.split(".com/").last)
+      metadata.set_metadata(repo_path, "current_branch", branch)
+      metadata.set_metadata(repo_path, "remote_type", type)
+    end
+
+    # Querying
+    ###############################################################################################
+
+    # grabs the commit sha needed for repo download based on provided tag/branch or defaults to latest commit
+    def get_hash(hash : String, repository_uri : String, tag : String?, branch : String) : String
+      if hash == "HEAD"
+        if !tag.nil?
+          get_hash_by_tag(repository_uri, tag)
+        else
+          get_hash_by_branch(repository_uri, branch)
+        end
+      else
+        hash
+      end
+    rescue ex : KeyError
+      get_hash_head(repository_uri)
+    end
+
+    def get_commit_hashes(repo_url : String)
+      uri = repo_url.gsub("www.", "")
+      stdout = IO::Memory.new
+      Process.new("git", ["ls-remote", uri], output: stdout).wait
+      output = stdout.to_s.split('\n')
+      output.compact_map do |ref|
+        next if ref.empty?
+        ref.split('\t', limit: 2).reverse
+      end.to_h
+    end
+
+    def get_commit_hashes(repo_url : String, branch : String)
+      ref_hash = get_commit_hashes(repo_url)
+      raise KeyError.new("Branch #{branch} does not exist in repo") unless ref_hash.has_key?("refs/heads/#{branch}")
+      ref_hash["refs/heads/#{branch}"]
+    end
+
+    private def get_hash_head(repo_url : String)
+      ref_hash = get_commit_hashes(repo_url)
+      ref_hash["HEAD"]? || ref_hash.first_key
+    end
+
+    private def get_hash_by_branch(repo_url : String, branch : String)
+      ref_hash = get_commit_hashes(repo_url)
+      raise KeyError.new("Branch #{branch} does not exist in repo") unless ref_hash.has_key?("refs/heads/#{branch}")
+      ref_hash["refs/heads/#{branch}"]
+    end
+
+    # tag = "1.9.0"
+    private def get_hash_by_tag(repo_url : String, tag : String)
+      ref_hash = get_commit_hashes(repo_url)
+      raise KeyError.new("Tag #{tag} does not exist in repo") unless ref_hash.has_key?("refs/tags/v#{tag}")
+      ref_hash["refs/tags/v#{tag}"]
+    end
+
+    # Downloading
+    ###############################################################################################
+
+    def download_archive(url : String, temp_tar_name : String)
+      Crest.get(url) do |response|
+        File.write(temp_tar_name, response.body_io)
+      end
+      File.new(temp_tar_name)
+    rescue ex : File::Error | Crest::RequestFailed
+      Log.error(exception: ex) { "Could not download file at #{url}" }
+    end
 
     def extract_archive(dest_path : String, temp_tar_name : String)
       raise File::NotFoundError.new(message: "File #{temp_tar_name} does not exist", file: temp_tar_name) unless File.exists?(Path.new(temp_tar_name))
@@ -133,64 +236,6 @@ module PlaceOS::FrontendLoader
         end
       end
       File.delete(temp_tar_name)
-    end
-
-    # grabs the commit sha needed for repo download based on provided tag/branch or defaults to latest commit
-    def get_hash(hash : String, repository_uri : String, tag : String?, branch : String)
-      begin
-        if hash == "HEAD"
-          if (!tag.nil?)
-            hash = get_hash_by_tag(repository_uri, tag)
-          else
-            hash = get_hash_by_branch(repository_uri, branch)
-          end
-        end
-      rescue ex : KeyError
-        hash = get_hash_head(repository_uri) if hash.nil?
-      end
-      hash.not_nil!
-    end
-
-    def save_metadata(repo_path : String, hash : String, repository_uri : String, branch : String, type : Remote::Reference::Type)
-      metadata.set_metadata(repo_path, "current_hash", hash)
-      metadata.set_metadata(repo_path, "current_repo", repository_uri.split(".com/").last)
-      metadata.set_metadata(repo_path, "current_branch", branch)
-      metadata.set_metadata(repo_path, "remote_type", type)
-    end
-
-    def get_commit_hashes(repo_url : String)
-      uri = repo_url.gsub("www.", "")
-      stdout = IO::Memory.new
-      Process.new("git", ["ls-remote", uri], output: stdout).wait
-      output = stdout.to_s.split('\n')
-      output.compact_map do |ref|
-        next if ref.empty?
-        ref.split('\t', limit: 2).reverse
-      end.to_h
-    end
-
-    def get_commit_hashes(repo_url : String, branch : String)
-      ref_hash = get_commit_hashes(repo_url)
-      raise KeyError.new("Branch #{branch} does not exist in repo") unless ref_hash.has_key?("refs/heads/#{branch}")
-      ref_hash["refs/heads/#{branch}"]
-    end
-
-    private def get_hash_head(repo_url : String)
-      ref_hash = get_commit_hashes(repo_url)
-      ref_hash.has_key?("HEAD") ? ref_hash["HEAD"] : ref_hash.first_key?
-    end
-
-    private def get_hash_by_branch(repo_url : String, branch : String)
-      ref_hash = get_commit_hashes(repo_url)
-      raise KeyError.new("Branch #{branch} does not exist in repo") unless ref_hash.has_key?("refs/heads/#{branch}")
-      ref_hash["refs/heads/#{branch}"]
-    end
-
-    # tag = "1.9.0"
-    private def get_hash_by_tag(repo_url : String, tag : String)
-      ref_hash = get_commit_hashes(repo_url)
-      raise KeyError.new("Tag #{tag} does not exist in repo") unless ref_hash.has_key?("refs/tags/v#{tag}")
-      ref_hash["refs/tags/v#{tag}"]
     end
   end
 end
