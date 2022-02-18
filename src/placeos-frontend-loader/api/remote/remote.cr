@@ -1,3 +1,4 @@
+require "crest"
 require "json"
 
 module PlaceOS::FrontendLoader

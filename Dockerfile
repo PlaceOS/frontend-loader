@@ -22,9 +22,7 @@ RUN PLACE_COMMIT=$PLACE_COMMIT \
 FROM alpine:3.15
 WORKDIR /app
 
-RUN apk upgrade --no-cache apk \
-    && \
-    apk add --update --no-cache \
+RUN apk add --update --no-cache \
     'apk-tools>=2.10.8-r0' \
     ca-certificates \
     'expat>=2.4.4-r0' \
