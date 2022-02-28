@@ -25,7 +25,10 @@ module PlaceOS::FrontendLoader
 
     # Returns the release tags for a given repo
     def releases(repo : String) : Array(String)
-      tags(repo)
+      url = "https://api.github.com/repos/#{repo}/releases"
+      response = Crest.get(url, handle_errors: false)
+      raise Exception.new("status_code for #{url} was #{response.status_code}") unless (response.success? || response.status_code == 302)
+      Array(NamedTuple(tag_name: String)).from_json(response.body).map(&.[:tag_name])
     end
 
     def download_latest_asset(repo : String, path : String)
