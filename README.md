@@ -2,6 +2,7 @@
 
 [![Build](https://github.com/PlaceOS/frontend-loader/actions/workflows/build.yml/badge.svg)](https://github.com/PlaceOS/frontend-loader/actions/workflows/build.yml)
 [![CI](https://github.com/PlaceOS/frontend-loader/actions/workflows/ci.yml/badge.svg)](https://github.com/PlaceOS/frontend-loader/actions/workflows/ci.yml)
+[![Changelog](https://img.shields.io/badge/Changelog-available-github.svg)](/CHANGELOG.md)
 
 ![suprisingly, a frontend loader!](./logo.svg)
 
@@ -47,12 +48,9 @@ client.close
 
 ## Contributing
 
-1. [Fork it](https://github.com/placeos/frontend-loader/fork)
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create a new Pull Request
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
 ## Contributors
 
 - [Caspian Baska](https://github.com/caspiano) - creator and maintainer
+- [Tassja Kriek](https://github.com/tassja) - contributor and maintainer
