@@ -55,13 +55,12 @@ module PlaceOS::FrontendLoader::Api
         .branches(repo)
     end
 
-    get "/:folder_name/releases", :branches do
+    get "/:folder_name/releases", :releases do
       folder_name = params["folder_name"]
       count = (params["count"]? || 50).to_i
       Log.context.set(folder: folder_name)
 
       releases = Repositories.releases(folder_name, count)
-
       releases.nil? ? head :not_found : render json: releases
     end
 
