@@ -44,7 +44,7 @@ shards:
   crystar:
     git: https://github.com/naqvis/crystar.git
     version: 0.2.0
-    
+
   db:
     git: https://github.com/crystal-lang/crystal-db.git
     version: 0.11.0
