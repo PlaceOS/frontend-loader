@@ -1,3 +1,9 @@
+## v1.3.3 (2022-03-01)
+
+### Fix
+
+- **Dockerfile**: resolve swath of `expat` CVEs
+
 ## v1.3.2 (2022-02-24)
 
 ### Fix

@@ -25,7 +25,7 @@ WORKDIR /app
 RUN apk add --update --no-cache \
     'apk-tools>=2.10.8-r0' \
     ca-certificates \
-    'expat>=2.4.4-r0' \
+    'expat>=2.4.5-r0' \
     git \
     'libcurl>=7.79.1-r0' \
     openssh
