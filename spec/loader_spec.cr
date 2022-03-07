@@ -85,7 +85,7 @@ module PlaceOS::FrontendLoader
     end
 
     it "supports changing a uri" do
-      expected_uri = "https://github.com/placeOS/private-drivers"
+      expected_uri = "https://www.github.com/placeOS/private-drivers"
       repository.username = "robot@place.tech"
 
       loader = Loader.new
@@ -94,12 +94,12 @@ module PlaceOS::FrontendLoader
 
       repository.clear_changes_information
       repository.uri = expected_uri
+      repository.save!
       loader.process_resource(:updated, repository).success?.should be_true
 
       Dir.exists?(expected_path).should be_true
-
-      url = Compiler::Git.run_git(expected_path, {"remote", "get-url", "origin"}).output.to_s
-      url.strip.should end_with("private-drivers")
+      Api::Repositories.current_repo(expected_path).should end_with("private-drivers")
+      File.exists?("/app/test-www/test-repo/README.md").should be_true
     end
 
     describe "branches" do
@@ -123,14 +123,29 @@ module PlaceOS::FrontendLoader
 
         loader.process_resource(:created, repository).success?.should be_true
         Dir.exists?(expected_path).should be_true
-        Compiler::Git.current_branch(expected_path).should eq branch
-
+        Api::Repositories.current_branch(expected_path).should eq branch
         repository.clear_changes_information
         repository.branch = updated_branch
-
         loader.process_resource(:updated, repository).success?.should be_true
         Dir.exists?(expected_path).should be_true
-        Compiler::Git.current_branch(expected_path).should eq updated_branch
+        Api::Repositories.current_branch(expected_path).should eq updated_branch
+      end
+
+      it "downloads a release asset" do
+        actioner = PlaceOS::FrontendLoader::Github.new
+        actioner.download_latest_asset("tassja/octokit.cr", Dir.current.to_s)
+        File.exists?("new_file.txt").should be_true
+      end
+
+      it "downloads the release asset on repo flag" do
+        repository = example_repository(LAB_TEST_FOLDER, uri: "https://www.github.com/tassja/octokit.cr")
+        repository.release = true
+        repository.save!
+        ref = PlaceOS::FrontendLoader::Remote::Reference.from_repository(repository)
+        expected_path = File.join(TEST_DIR, repository.folder_name)
+        actioner = PlaceOS::FrontendLoader::Github.new
+        actioner.download(ref: ref, path: expected_path)
+        File.exists?(File.join(expected_path, "new_file.txt")).should be_true
       end
     end
   end

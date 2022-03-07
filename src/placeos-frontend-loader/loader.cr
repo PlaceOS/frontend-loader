@@ -5,13 +5,21 @@ require "placeos-models/repository"
 require "placeos-resource"
 require "tasker"
 
+require "http/client"
+require "crystar"
+
 require "../constants.cr"
+require "./api/remote/*"
 
 module PlaceOS::FrontendLoader
   class Loader < Resource(Model::Repository)
     Log = ::Log.for(self)
 
     private alias Git = PlaceOS::Compiler::Git
+    private alias Remote = PlaceOS::FrontendLoader::Remote
+    private alias Type = PlaceOS::FrontendLoader::Remote::Reference::Type
+
+    private getter remotes : Hash(Type, Remote) = Hash(Type, Remote).new
 
     Habitat.create do
       setting content_directory : String = WWW
@@ -32,10 +40,22 @@ module PlaceOS::FrontendLoader
     getter update_crontab : String
     private property update_cron : Tasker::CRON(Int64)? = nil
 
+    def remote_for(type : Type) : Remote
+      case type
+      in Type::Github
+        PlaceOS::FrontendLoader::Github.new
+      in Type::GitLab
+        PlaceOS::FrontendLoader::GitLab.new
+      end
+    end
+
     def initialize(
       @content_directory : String = Loader.settings.content_directory,
       @update_crontab : String = Loader.settings.update_crontab
     )
+      Type.values.each do |key|
+        @remotes[key] = remote_for(key)
+      end
       super()
     end
 
@@ -52,16 +72,14 @@ module PlaceOS::FrontendLoader
 
     # Frontend loader implicitly and idempotently creates a base www
     protected def create_base_www
-      content_directory_parent = Path[content_directory].parent.to_s
-      Loader.clone_and_pull(
-        repository_folder_name: content_directory,
-        repository_uri: "https://github.com/PlaceOS/www-core",
-        content_directory: content_directory_parent,
-        username: Loader.settings.username,
-        password: Loader.settings.password,
-        branch: "master",
-        depth: 1,
-      )
+      Model::Repository.new(
+        name: "PlaceOS/www-core",
+        repo_type: Model::Repository::Type::Interface,
+        folder_name: UUID.random.to_s,
+        uri: BASE_REF,
+      ).save!
+      base_ref = Remote::Reference.new(url: BASE_REF, branch: "master")
+      remotes[base_ref.remote_type].download(ref: base_ref, path: File.expand_path(content_directory))
     end
 
     protected def start_update_cron : Nil
@@ -78,10 +96,7 @@ module PlaceOS::FrontendLoader
       loaded = load_resources
 
       # Pull www (content directory)
-      pull_result = Git.pull(".", content_directory)
-      unless pull_result.success?
-        Log.error { "failed to pull www: #{pull_result.output}" }
-      end
+      create_base_www
 
       loaded
     end
@@ -98,6 +113,7 @@ module PlaceOS::FrontendLoader
         Loader.load(
           repository: repository,
           content_directory: @content_directory,
+          remotes: @remotes
         )
       in Action::Deleted
         # Unload the repository
@@ -113,38 +129,25 @@ module PlaceOS::FrontendLoader
 
     def self.load(
       repository : Model::Repository,
-      content_directory : String
+      content_directory : String,
+      remotes : Hash(Type, Remote)
     )
-      branch = repository.branch
-      username = repository.username || Loader.settings.username
-      password = repository.decrypt_password || Loader.settings.password
-      repository_commit = repository.commit_hash
       content_directory = File.expand_path(content_directory)
       repository_directory = File.expand_path(File.join(content_directory, repository.folder_name))
 
-      if repository.uri_changed? && Dir.exists?(repository_directory)
-        # Reload the repository to prevent conflicting histories
-        unload(repository, content_directory)
-      end
+      repository_commit = repository.commit_hash
 
-      # Clone and pull the repository
-      clone_and_pull(
-        repository_folder_name: repository.folder_name,
-        repository_uri: repository.uri,
-        content_directory: content_directory,
-        username: username,
-        password: password,
-        branch: branch,
-      )
+      unload(repository, content_directory) if repository.uri_changed? && Dir.exists?(repository_directory)
 
-      hash = repository.should_pull? ? "HEAD" : repository.commit_hash
+      # Download and extract the repository at given branch or commit
+      ref = Remote::Reference.from_repository(repository)
 
-      # Checkout repository to commit on the model
-      Git.checkout_branch(branch, repository.folder_name, content_directory)
-      Git._checkout(repository_directory, hash, raises: false)
+      current_remote = remotes[ref.remote_type]
 
-      # Grab commit for the cloned/pulled repository
-      checked_out_commit = Git.current_repository_commit(repository.folder_name, content_directory)
+      current_remote.download(ref: ref, hash: ref.hash, branch: ref.branch, path: repository_directory)
+
+      # Grab commit for the downloaded/extracted repository
+      checked_out_commit = Api::Repositories.current_commit(repository_directory)
 
       # Update model commit iff...
       # - the repository is not held at HEAD
@@ -166,12 +169,11 @@ module PlaceOS::FrontendLoader
       Log.info { {
         message:           "loaded repository",
         commit:            checked_out_commit,
-        branch:            branch,
+        branch:            repository.branch,
         repository:        repository.folder_name,
         repository_commit: repository_commit,
         uri:               repository.uri,
       } }
-
       Resource::Result::Success
     end
 
@@ -208,52 +210,6 @@ module PlaceOS::FrontendLoader
           end
         else
           Resource::Result::Skipped
-        end
-      end
-    end
-
-    def self.clone_and_pull(
-      repository_folder_name : String,
-      repository_uri : String,
-      content_directory : String,
-      branch : String,
-      username : String? = nil,
-      password : String? = nil,
-      depth : Int32? = nil
-    )
-      Git.repository_lock(repository_folder_name).write do
-        Log.info { {
-          message:    "cloning repository",
-          repository: repository_folder_name,
-          branch:     branch,
-          uri:        repository_uri,
-        } }
-
-        clone_result = Git.clone(
-          repository: repository_folder_name,
-          repository_uri: repository_uri,
-          username: username,
-          password: password,
-          working_directory: content_directory,
-          depth: depth,
-          branch: branch,
-          raises: true,
-        )
-
-        # Pull if already cloned and pull intended
-        if clone_result.output.includes?("already exists")
-          Log.info { {
-            message:    "pulling repository",
-            repository: repository_folder_name,
-            branch:     branch,
-            uri:        repository_uri,
-          } }
-
-          # Ensure branch is locally present
-          Git.fetch(repository_folder_name, content_directory)
-
-          # Pull HEAD of branch
-          Git.pull(repository_folder_name, content_directory, branch: branch, raises: true)
         end
       end
     end

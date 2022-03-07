@@ -1,5 +1,6 @@
 require "digest/sha1"
 require "placeos-compiler/git"
+require "hash_file"
 
 require "./base"
 require "../loader"
@@ -8,9 +9,6 @@ module PlaceOS::FrontendLoader::Api
   class Repositories < Base
     base "/api/frontend-loader/v1/repositories"
     Log = ::Log.for(self)
-
-    # :nodoc:
-    alias Git = PlaceOS::Compiler::Git
 
     class_property loader : Loader = Loader.instance
 
@@ -27,18 +25,14 @@ module PlaceOS::FrontendLoader::Api
       commits.nil? ? head :not_found : render json: commits
     end
 
-    def self.commits(folder : String, branch : String, count : Int32 = 50, loader : Loader = Loader.instance)
-      with_query_directory(folder, loader) do |key, directory|
-        Git.repository_commits(
-          repository: key,
-          working_directory: directory,
-          count: count,
-          branch: branch
-        )
-      end
-    rescue e
-      Log.error(exception: e) { "failed to fetch commmits" }
-      nil
+    def self.commits(folder : String, branch : String?, count : Int32 = 50, loader : Loader = Loader.instance)
+      metadata = Metadata.instance
+      repo = metadata.get_metadata(folder, "current_repo")
+      remote_type = metadata.remote_type(folder)
+      return unless remote_type
+      loader
+        .remote_for(remote_type)
+        .commits(repo, branch)[0...count]
     end
 
     # Returns an array of branches for a repository
@@ -52,12 +46,40 @@ module PlaceOS::FrontendLoader::Api
     end
 
     def self.branches(folder, loader : Loader = Loader.instance)
-      with_query_directory(folder, loader) do |key, directory|
-        Git.branches(key, directory)
-      end
-    rescue e
-      Log.error(exception: e) { "failed to fetch branches" }
-      nil
+      metadata = Metadata.instance
+      repo = metadata.get_metadata(folder, "current_repo")
+      remote_type = metadata.remote_type(folder)
+      return unless remote_type
+      loader
+        .remote_for(remote_type)
+        .branches(repo)
+    end
+
+    get "/:folder_name/releases", :releases do
+      folder_name = params["folder_name"]
+      count = (params["count"]? || 50).to_i
+      Log.context.set(folder: folder_name)
+
+      releases = Repositories.releases(folder_name, count)
+      releases.nil? ? head :not_found : render json: releases
+    end
+
+    def self.releases(folder, count : Int32 = 50, loader : Loader = Loader.instance)
+      metadata = Metadata.instance
+      repo = metadata.get_metadata(folder, "current_repo")
+      remote_type = metadata.remote_type(folder)
+      return unless remote_type
+      loader
+        .remote_for(remote_type)
+        .releases(repo)[0...count]
+    end
+
+    def self.default_branch(folder, loader : Loader = Loader.instance) : String
+      metadata = Metadata.instance
+      repo = metadata.get_metadata(folder, "current_repo")
+      remote_type = metadata.remote_type(folder)
+      return "master" unless remote_type
+      loader.remote_for(remote_type).default_branch(repo)
     end
 
     # Returns a hash of folder name to commits
@@ -73,34 +95,23 @@ module PlaceOS::FrontendLoader::Api
         .reject(/^\./)
         .select { |e|
           path = File.join(content_directory, e)
-          File.directory?(path) && File.exists?(File.join(path, ".git"))
+          File.directory?(path)
         }
         .each_with_object({} of String => String) { |folder_name, hash|
-          hash[folder_name] = Compiler::Git.current_repository_commit(folder_name, content_directory)
+          hash[folder_name] = Api::Repositories.current_commit(Path.new([content_directory, folder_name]).to_s)
         }
     end
 
-    # Clean repository copies to query
-    ###########################################################################
-
-    class_property query_directory : String do
-      File.join(Dir.tempdir, "loader-queries").tap(&->Dir.mkdir_p(String))
+    def self.current_branch(repository_path : String)
+      Metadata.instance.get_metadata(repository_path.split("/").last, "current_branch")
     end
 
-    def self.with_query_directory(folder, loader : Loader = Loader.instance)
-      authoritative_path = File.join(loader.content_directory, folder)
-      key = Git.repository_lock(authoritative_path).read do
-        remote = Git.remote(folder, loader.content_directory)
+    def self.current_commit(repository_path : String)
+      Metadata.instance.get_metadata(repository_path.split("/").last, "current_hash")
+    end
 
-        # NOTE: url unsafe chars are removed
-        remote_digest = Digest::SHA1.base64digest(remote)[0..6].gsub(/(\+|\/|\=)/, "")
-        remote_digest.tap do |digest|
-          cache_path = File.join(query_directory, digest)
-          FileUtils.cp_r(authoritative_path, cache_path) unless Dir.exists?(cache_path)
-        end
-      end
-
-      yield ({key, query_directory})
+    def self.current_repo(repository_path : String)
+      Metadata.instance.get_metadata(repository_path.split("/").last, "current_repo")
     end
   end
 end

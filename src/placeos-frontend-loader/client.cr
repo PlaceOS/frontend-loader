@@ -49,7 +49,7 @@ module PlaceOS::FrontendLoader
       params["count"] = count.to_s unless count.nil?
       path = "/repositories/#{folder_name}/commits?#{params}"
       response = get(path)
-      Array(NamedTuple(commit: String, date: String, author: String, subject: String)).from_json(response.body)
+      Array(NamedTuple(commit: String, name: String)).from_json(response.body)
     end
 
     # Branches for a frontend folder
@@ -62,6 +62,39 @@ module PlaceOS::FrontendLoader
 
     def version : PlaceOS::Model::Version
       Model::Version.from_json(get("/version").body)
+    end
+
+    # Releases for a remote repository
+    def releases(repository_url : String)
+      encoded_url = URI.encode_www_form(repository_url)
+      path = "/remotes/#{encoded_url}/releases"
+      response = get(path)
+      Array(String).from_json(response.body)
+    end
+
+    # Commits for a remote repository
+    def remote_commits(repository_url : String, branch : String)
+      encoded_url = URI.encode_www_form(repository_url)
+      params = HTTP::Params{"branch" => branch}
+      path = "/remotes/#{encoded_url}/commits?#{params}"
+      response = get(path)
+      Array(PlaceOS::FrontendLoader::Remote::Commit).from_json(response.body)
+    end
+
+    # Branches for a remote repository
+    def remote_branches(repository_url : String)
+      encoded_url = URI.encode_www_form(repository_url)
+      path = "/remotes/#{encoded_url}/branches"
+      response = get(path)
+      Array(String).from_json(response.body)
+    end
+
+    # Tags for a remote repository
+    def tags(repository_url : String)
+      encoded_url = URI.encode_www_form(repository_url)
+      path = "/remotes/#{encoded_url}/tags"
+      response = get(path)
+      Array(String).from_json(response.body)
     end
 
     ###########################################################################

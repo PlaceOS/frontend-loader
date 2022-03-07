@@ -10,6 +10,16 @@ module PlaceOS::FrontendLoader::Api
       commits.should_not be_empty
     end
 
+    it "gets the default branch if not master" do
+      repository = example_repository(TEST_FOLDER, uri: "https://www.github.com/placeos/backoffice")
+
+      loader = Loader.new
+      loader.process_resource(:created, repository).success?.should be_true
+      branch = Api::Repositories.default_branch(repository.folder_name, loader: loader)
+      commits = Api::Repositories.commits(repository.folder_name, branch, loader: loader).not_nil!
+      commits.should_not be_empty
+    end
+
     it "lists branches for a loaded repository" do
       repository = example_repository(TEST_FOLDER)
       loader = Loader.new
@@ -30,6 +40,14 @@ module PlaceOS::FrontendLoader::Api
       loaded[repository.folder_name].should_not eq("HEAD")
     end
 
+    it "lists releases for a loaded repository" do
+      repository = example_repository(TEST_FOLDER)
+      loader = Loader.new
+      loader.process_resource(:created, repository).success?.should be_true
+      releases = Api::Repositories.releases(repository.folder_name, loader: loader).not_nil!
+      releases.should_not be_empty
+    end
+
     describe "query" do
       it "does not mutate the managed repositories" do
         branch = "test-fixture"
@@ -43,12 +61,11 @@ module PlaceOS::FrontendLoader::Api
         expected_path = File.join(loader.content_directory, folder)
 
         Dir.exists?(expected_path).should be_true
-        Compiler::Git.current_repository_commit(folder, loader.content_directory).should eq checked_out_commit
+        Api::Repositories.current_commit(expected_path).should eq checked_out_commit
         Api::Repositories.branches(folder, loader).not_nil!.should_not be_empty
         Api::Repositories.commits(folder, branch, loader: loader).not_nil!.should_not be_empty
         Api::Repositories.commits(folder, "master", loader: loader).not_nil!.should_not be_empty
-
-        Compiler::Git.current_repository_commit(folder, loader.content_directory).should eq checked_out_commit
+        Api::Repositories.current_commit(expected_path).should eq checked_out_commit
       end
     end
   end

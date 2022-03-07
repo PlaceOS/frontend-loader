@@ -4,6 +4,7 @@ crystal: ">= 1.1.1"
 license: MIT
 authors:
   - Caspian Baska <caspian@place.tech>
+  - Tassja Kriek <tassja@place.tech>
 
 targets:
   frontends:
@@ -13,6 +14,22 @@ dependencies:
   action-controller:
     github: spider-gazelle/action-controller
     version: ~> 4.4
+
+  crest:
+    github: mamantoha/crest
+
+  crystar:
+    github: naqvis/crystar
+
+  gitlab:
+    github: icyleaf/gitlab.cr
+
+  hash_file:
+    github: tassja/hash_file
+
+  octokit:
+    github: place-labs/octokit.cr
+    version: ~> 0.1.2
 
   placeos-compiler:
     github: placeos/compiler
@@ -35,7 +52,6 @@ dependencies:
 
   tasker:
     github: spider-gazelle/tasker
-
 development_dependencies:
   ameba:
     github: crystal-ameba/ameba

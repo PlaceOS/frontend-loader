@@ -53,3 +53,4 @@ See [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 ## Contributors
 
 - [Caspian Baska](https://github.com/caspiano) - creator and maintainer
+- [Tassja Kriek](https://github.com/tassja) - contributor and maintainer
