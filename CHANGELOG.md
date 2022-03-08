@@ -1,8 +1,6 @@
+## Unreleased
+
 ## v2.0.0 (2022-03-07)
-
-### Refactor
-
-- **loader**: download git repo archive instead of clone & pull ([#47](https://github.com/PlaceOS/frontend-loader/pull/47))
 
 ## v1.3.3 (2022-03-01)
 
