@@ -11,7 +11,7 @@ shards:
 
   active-model:
     git: https://github.com/spider-gazelle/active-model.git
-    version: 3.1.1
+    version: 4.0.0
 
   ameba:
     git: https://github.com/crystal-ameba/ameba.git
@@ -109,10 +109,6 @@ shards:
     git: https://github.com/sija/ipaddress.cr.git
     version: 0.2.1
 
-  json_mapping:
-    git: https://github.com/crystal-lang/json_mapping.cr.git
-    version: 0.1.1
-
   jwt:
     git: https://github.com/crystal-community/jwt.git
     version: 1.6.0
@@ -159,7 +155,7 @@ shards:
 
   placeos-core-client:
     git: https://github.com/placeos/core-client.git
-    version: 0.4.0
+    version: 0.4.1
 
   placeos-driver:
     git: https://github.com/placeos/driver.git
@@ -171,11 +167,11 @@ shards:
 
   placeos-models:
     git: https://github.com/placeos/models.git
-    version: 6.6.5
+    version: 7.0.0
 
   placeos-resource:
     git: https://github.com/place-labs/resource.git
-    version: 2.3.0
+    version: 2.3.1
 
   pool:
     git: https://github.com/ysbaddaden/pool.git
@@ -207,7 +203,7 @@ shards:
 
   rethinkdb-orm:
     git: https://github.com/spider-gazelle/rethinkdb-orm.git
-    version: 5.0.4
+    version: 6.0.0
 
   retriable: # Overridden
     git: https://github.com/sija/retriable.cr.git
@@ -240,8 +236,4 @@ shards:
   ulid:
     git: https://github.com/place-labs/ulid.git
     version: 0.1.2
-
-  yaml_mapping:
-    git: https://github.com/crystal-lang/yaml_mapping.cr.git
-    version: 0.1.1
 
