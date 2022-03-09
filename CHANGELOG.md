@@ -1,4 +1,8 @@
-## Unreleased
+## v2.0.1 (2022-03-09)
+
+### Fix
+
+- bump `placeos-models` ([#53](https://github.com/PlaceOS/frontend-loader/pull/53))
 
 ## v2.0.0 (2022-03-07)
 
