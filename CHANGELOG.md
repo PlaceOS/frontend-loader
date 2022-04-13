@@ -1,3 +1,9 @@
+## v2.0.3 (2022-04-13)
+
+### Fix
+
+- **loader**: remove the creation of the base www model ([#55](https://github.com/PlaceOS/frontend-loader/pull/55))
+
 ## v2.0.2 (2022-04-08)
 
 ## v2.0.1 (2022-03-09)
