@@ -72,12 +72,6 @@ module PlaceOS::FrontendLoader
 
     # Frontend loader implicitly and idempotently creates a base www
     protected def create_base_www
-      Model::Repository.new(
-        name: "PlaceOS/www-core",
-        repo_type: Model::Repository::Type::Interface,
-        folder_name: UUID.random.to_s,
-        uri: BASE_REF,
-      ).save!
       base_ref = Remote::Reference.new(url: BASE_REF, branch: "master")
       remotes[base_ref.remote_type].download(ref: base_ref, path: File.expand_path(content_directory))
     end
@@ -91,14 +85,12 @@ module PlaceOS::FrontendLoader
       end
     end
 
+    # Pull all frontends
     protected def repeating_update
-      # Pull all frontends
-      loaded = load_resources
-
-      # Pull www (content directory)
-      create_base_www
-
-      loaded
+      load_resources.tap do
+        # Pull base PlaceOS WWW folder
+        create_base_www
+      end
     end
 
     def process_resource(action : Resource::Action, resource : Model::Repository) : Resource::Result
