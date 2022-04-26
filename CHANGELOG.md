@@ -1,4 +1,8 @@
-## Unreleased
+## v2.1.0 (2022-04-26)
+
+### Feat
+
+- **logging**: optional log level from ENV var ([#57](https://github.com/PlaceOS/frontend-loader/pull/57))
 
 ## v2.0.3 (2022-04-13)
 
