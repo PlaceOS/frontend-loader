@@ -103,6 +103,7 @@ spawn(same_thread: true) do
   begin
     PlaceOS::FrontendLoader::Loader.instance.start
   rescue error
+    puts error.inspect_with_backtrace
     PlaceOS::FrontendLoader::Loader::Log.error(exception: error) { "startup failed" }
     server.close
   end
