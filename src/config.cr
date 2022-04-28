@@ -5,6 +5,9 @@ require "action-controller"
 require "./logging"
 require "./placeos-frontend-loader"
 
+# Require telemery after application code
+require "./telemetry"
+
 # Server required after application controllers
 require "action-controller/server"
 
