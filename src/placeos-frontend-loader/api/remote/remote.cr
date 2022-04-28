@@ -85,8 +85,20 @@ module PlaceOS::FrontendLoader
       getter hash : String
       getter tag : String | Nil
 
-      def initialize(url : String | URI, @branch : String? = "master", @tag : String? = nil, @hash : String? = "HEAD")
+      def initialize(
+        url : String | URI,
+        @branch : String? = "master",
+        @tag : String? = nil,
+        @hash : String? = "HEAD",
+        user : String? = nil,
+        pass : String? = nil
+      )
         @uri = uri = url.is_a?(URI) ? url : URI.parse(url)
+        if user.presence && pass.presence
+          uri.user = user
+          uri.password = pass
+        end
+
         @repo_name = uri.path.strip("/")
         @remote_type = {% begin %}
           case uri.host.to_s
@@ -102,7 +114,7 @@ module PlaceOS::FrontendLoader
 
       def self.from_repository(repository : Model::Repository)
         hash = repository.should_pull? ? "HEAD" : repository.commit_hash
-        self.new(url: repository.uri, branch: repository.branch, hash: hash)
+        self.new(url: repository.uri, branch: repository.branch, hash: hash, user: repository.username, pass: repository.decrypt_password)
       end
 
       def remote
