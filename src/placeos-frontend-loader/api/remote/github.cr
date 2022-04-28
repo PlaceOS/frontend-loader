@@ -12,35 +12,29 @@ module PlaceOS::FrontendLoader
 
     @github_client = Octokit.client(GIT_USER, GIT_PASS)
 
-    # TODO: This doesn't handle missing repositories
-    def default_branch(repo : String) : String
-      url = "https://api.github.com/repos/#{repo}"
-      response = Crest.get(url, handle_errors: false)
-
-      raise Exception.new("status_code for #{url} was #{response.status_code}") unless (response.success? || response.status_code == 302)
-
-      parsed = NamedTuple(default_branch: String?).from_json(response.body)
-      parsed[:default_branch] || "master"
+    private def extract_repo_name(repo : String)
+      repo = repo.downcase
+      repo.includes?("://") ? repo.split(".com/").last.rchop(".git") : repo
     end
 
     # Returns the release tags for a given repo
     def releases(repo : String) : Array(String)
-      url = "https://api.github.com/repos/#{repo}/releases"
+      url = "https://api.github.com/repos/#{extract_repo_name repo}/releases"
       response = Crest.get(url, handle_errors: false)
       raise Exception.new("status_code for #{url} was #{response.status_code}") unless (response.success? || response.status_code == 302)
       Array(NamedTuple(tag_name: String)).from_json(response.body).map(&.[:tag_name])
     end
 
     def download_latest_asset(repo : String, path : String)
-      @github_client.latest_release_asset(repo, path)
+      @github_client.latest_release_asset(extract_repo_name(repo), path)
     end
 
     def download_asset(repo : String, tag : String, path : String)
-      @github_client.release_asset(repo, tag, path)
+      @github_client.release_asset(extract_repo_name(repo), tag, path)
     end
 
     def url(repo_name : String) : String
-      "https://www.github.com/#{repo_name}"
+      repo_name.includes?("://") ? repo_name : "https://www.github.com/#{repo_name}"
     end
 
     def download(
@@ -67,7 +61,7 @@ module PlaceOS::FrontendLoader
           hash = get_hash(hash, repository_uri, tag, branch)
           temp_tar_name = Random.rand(UInt32).to_s
           begin
-            archive_url = "https://github.com/#{ref.repo_name}/archive/#{hash}.tar.gz"
+            archive_url = "https://github.com/#{ref.repo_name.rchop(".git")}/archive/#{hash}.tar.gz"
             download_archive(archive_url, temp_tar_name)
             extract_archive(path, temp_tar_name)
             save_metadata(repository_folder_name, hash, repository_uri, branch, ref.remote_type)

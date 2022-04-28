@@ -20,6 +20,32 @@ module PlaceOS::FrontendLoader::Api
       commits.should_not be_empty
     end
 
+    it "gets the default branch of a generic repository" do
+      repository = example_repository(TEST_FOLDER, uri: "https://bitbucket.org/cotag/angular_core_test.git")
+
+      loader = Loader.new
+      loader.process_resource(:created, repository).success?.should be_true
+      branch = Api::Repositories.default_branch(repository.folder_name, loader: loader)
+      commits = Api::Repositories.commits(repository.folder_name, branch, loader: loader).not_nil!
+      commits.should_not be_empty
+    end
+
+    it "fetches a specific commit of a generic repository" do
+      repository = example_repository(TEST_FOLDER, uri: "https://bitbucket.org/cotag/angular_core_test.git", commit: "5bb5855038cc1ff63636223f389b5b927592e1f8")
+      loader = Loader.new
+      loader.process_resource(:created, repository).success?.should be_true
+    end
+
+    it "gets the default branch of a gitlab repository" do
+      repository = example_repository(TEST_FOLDER, uri: "https://gitlab.com/bdowney/ansible-demo/")
+
+      loader = Loader.new
+      loader.process_resource(:created, repository).success?.should be_true
+      branch = Api::Repositories.default_branch(repository.folder_name, loader: loader)
+      commits = Api::Repositories.commits(repository.folder_name, branch, loader: loader).not_nil!
+      commits.should_not be_empty
+    end
+
     it "lists branches for a loaded repository" do
       repository = example_repository(TEST_FOLDER)
       loader = Loader.new

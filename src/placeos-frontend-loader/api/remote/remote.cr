@@ -22,7 +22,11 @@ module PlaceOS::FrontendLoader
 
     def remote_type(repo_name)
       lock.synchronize do
-        PlaceOS::FrontendLoader::Remote::Reference::Type.parse?(hash_file["#{repo_name}/metadata/remote_type"].to_s.strip)
+        begin
+          PlaceOS::FrontendLoader::Remote::Reference::Type.parse?(hash_file["#{repo_name}/metadata/remote_type"].to_s.strip)
+        rescue
+          PlaceOS::FrontendLoader::Remote::Reference::Type::Generic
+        end
       end
     end
 
@@ -46,12 +50,12 @@ module PlaceOS::FrontendLoader
       uri = repository_url.is_a?(URI) ? repository_url : URI.parse(repository_url)
       {% begin %}
       case uri.host.to_s
-      {% for remote in Reference::Type.constants %}
+      {% for remote in Reference::Type.constants.reject { |rem| rem.stringify == "Generic" } %}
         when .includes?(Reference::Type::{{ remote }}.to_s.downcase)
           PlaceOS::FrontendLoader::{{ remote.id }}.new
       {% end %}
       else
-        raise Exception.new("Host not supported: #{repository_url}")
+        PlaceOS::FrontendLoader::Generic.new(uri)
       end
     {% end %}
     end
@@ -71,16 +75,30 @@ module PlaceOS::FrontendLoader
       enum Type
         GitLab
         Github
+        Generic
       end
 
+      getter uri : URI
       getter repo_name : String
       getter remote_type : Reference::Type
       getter branch : String
       getter hash : String
       getter tag : String | Nil
 
-      def initialize(url : String | URI, @branch : String? = "master", @tag : String? = nil, @hash : String? = "HEAD")
-        uri = url.is_a?(URI) ? url : URI.parse(url)
+      def initialize(
+        url : String | URI,
+        @branch : String? = "master",
+        @tag : String? = nil,
+        @hash : String? = "HEAD",
+        user : String? = nil,
+        pass : String? = nil
+      )
+        @uri = uri = url.is_a?(URI) ? url : URI.parse(url)
+        if user.presence && pass.presence
+          uri.user = user
+          uri.password = pass
+        end
+
         @repo_name = uri.path.strip("/")
         @remote_type = {% begin %}
           case uri.host.to_s
@@ -89,14 +107,25 @@ module PlaceOS::FrontendLoader
             Reference::Type::{{ remote.id }}
           {% end %}
           else
-            raise Exception.new("Host not supported: #{url}")
+            Reference::Type::Generic
           end
           {% end %}
       end
 
       def self.from_repository(repository : Model::Repository)
         hash = repository.should_pull? ? "HEAD" : repository.commit_hash
-        self.new(url: repository.uri, branch: repository.branch, hash: hash)
+        self.new(url: repository.uri, branch: repository.branch, hash: hash, user: repository.username, pass: repository.decrypt_password)
+      end
+
+      def remote
+        case remote_type
+        in Type::Github
+          PlaceOS::FrontendLoader::Github.new
+        in Type::GitLab
+          PlaceOS::FrontendLoader::GitLab.new
+        in Type::Generic
+          PlaceOS::FrontendLoader::Generic.new(uri)
+        end
       end
     end
 
@@ -136,13 +165,22 @@ module PlaceOS::FrontendLoader
       end
     end
 
-    abstract def default_branch(repo : String) : String
+    def default_branch(repo : String) : String
+      stdout = IO::Memory.new
+      Process.new("git", {"ls-remote", "--symref", repo, "HEAD"}, output: stdout).wait
+      stdout.to_s
+        .split('\n')
+        .first
+        .split('\t')
+        .first
+        .lchop("ref: refs/heads/")
+    end
 
     abstract def download(ref : Reference, path : String, branch : String? = "master", hash : String? = "HEAD", tag : String? = nil)
 
     def save_metadata(repo_path : String, hash : String, repository_uri : String, branch : String, type : Remote::Reference::Type)
       metadata.set_metadata(repo_path, "current_hash", hash)
-      metadata.set_metadata(repo_path, "current_repo", repository_uri.split(".com/").last)
+      metadata.set_metadata(repo_path, "current_repo", repository_uri)
       metadata.set_metadata(repo_path, "current_branch", branch)
       metadata.set_metadata(repo_path, "remote_type", type)
     end
@@ -166,9 +204,9 @@ module PlaceOS::FrontendLoader
     end
 
     def get_commit_hashes(repo_url : String)
-      uri = repo_url.gsub("www.", "")
+      uri = url(repo_url).gsub("www.", "")
       stdout = IO::Memory.new
-      Process.new("git", ["ls-remote", uri], output: stdout).wait
+      Process.new("git", {"ls-remote", uri}, output: stdout).wait
       output = stdout.to_s.split('\n')
       output.compact_map do |ref|
         next if ref.empty?

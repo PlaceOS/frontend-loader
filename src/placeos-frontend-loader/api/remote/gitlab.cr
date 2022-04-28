@@ -14,14 +14,14 @@ module PlaceOS::FrontendLoader
 
     @gitlab_client = Gitlab.client(ENDPOINT, GITLAB_TOKEN)
 
+    private def extract_repo_name(repo : String)
+      repo = repo.downcase
+      repo.includes?("://") ? repo.split(".com/").last.rchop(".git") : repo
+    end
+
     def get_repo_id(repo_name : String)
       repo = URI.encode_www_form(repo_name)
       @gitlab_client.project(repo)["id"].to_s.to_i
-    end
-
-    def default_branch(repo : String) : String
-      # TODO: Determine the default from the remote
-      "master"
     end
 
     # TODO: Implement
@@ -36,14 +36,14 @@ module PlaceOS::FrontendLoader
 
     # Returns the tags for a given repo
     def tags(repo : String) : Array(String)
-      repo_id = get_repo_id(repo)
+      repo_id = get_repo_id(extract_repo_name repo)
       @gitlab_client.tags(repo_id).as_a.map do |value|
         value["name"].to_s
       end
     end
 
     def url(repo_name : String) : String
-      "https://gitlab.com/#{repo_name}"
+      repo_name.includes?("://") ? repo_name : "https://gitlab.com/#{repo_name}"
     end
 
     def download(
@@ -68,12 +68,12 @@ module PlaceOS::FrontendLoader
         } }
 
         begin
-          repo_encoded = ref.repo_name.gsub("/", "%2F")
+          repo_encoded = ref.repo_name.rchop(".git").gsub("/", "%2F")
           archive_url = "https://gitlab.com/api/v4/projects/#{repo_encoded}/repository/archive.tar.gz?sha=#{hash}"
 
           download_archive(archive_url, temp_tar_name)
           extract_archive(path, temp_tar_name)
-          save_metadata(path, hash, ref.repo_name, branch, ref.remote_type)
+          save_metadata(repository_folder_name, hash, repository_uri, branch, ref.remote_type)
         rescue ex : KeyError | File::Error
           Log.error(exception: ex) { "Could not download repository: #{ex.message}" }
         end
