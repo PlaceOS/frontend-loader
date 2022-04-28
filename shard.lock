@@ -17,6 +17,10 @@ shards:
     git: https://github.com/crystal-ameba/ameba.git
     version: 1.0.0
 
+  any_hash:
+    git: https://github.com/sija/any_hash.cr.git
+    version: 0.2.5
+
   backtracer:
     git: https://github.com/sija/backtracer.cr.git
     version: 1.2.1
@@ -212,6 +216,10 @@ shards:
   protobuf:
     git: https://github.com/jeromegn/protobuf.cr.git
     version: 2.2.3
+
+  raven:
+    git: https://github.com/sija/raven.cr.git
+    version: 1.9.1+git.commit.d53319dc4ce26fc44f13b9c1c6ffb8699e22899b
 
   redis:
     git: https://github.com/stefanwille/crystal-redis.git
