@@ -30,6 +30,12 @@ module PlaceOS::FrontendLoader::Api
       commits.should_not be_empty
     end
 
+    it "fetches a specific commit of a generic repository" do
+      repository = example_repository(TEST_FOLDER, uri: "https://bitbucket.csiro.au/scm/~deg032/bloom-filter-demo.git", commit: "3a0f6113928090e232a0d60066e97e18fea85e19")
+      loader = Loader.new
+      loader.process_resource(:created, repository).success?.should be_true
+    end
+
     it "gets the default branch of a gitlab repository" do
       repository = example_repository(TEST_FOLDER, uri: "https://gitlab.com/bdowney/ansible-demo/")
 
