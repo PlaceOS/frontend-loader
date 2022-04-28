@@ -14,14 +14,14 @@ module PlaceOS::FrontendLoader
 
     @gitlab_client = Gitlab.client(ENDPOINT, GITLAB_TOKEN)
 
+    private def extract_repo_name(repo : String)
+      repo = repo.downcase
+      repo.includes?("://") ? repo.split(".com/").last : repo
+    end
+
     def get_repo_id(repo_name : String)
       repo = URI.encode_www_form(repo_name)
       @gitlab_client.project(repo)["id"].to_s.to_i
-    end
-
-    def default_branch(repo : String) : String
-      # TODO: Determine the default from the remote
-      "master"
     end
 
     # TODO: Implement
@@ -36,14 +36,14 @@ module PlaceOS::FrontendLoader
 
     # Returns the tags for a given repo
     def tags(repo : String) : Array(String)
-      repo_id = get_repo_id(repo)
+      repo_id = get_repo_id(extract_repo_name repo)
       @gitlab_client.tags(repo_id).as_a.map do |value|
         value["name"].to_s
       end
     end
 
     def url(repo_name : String) : String
-      "https://gitlab.com/#{repo_name}"
+      repo_name.includes?("://") ? repo_name : "https://gitlab.com/#{repo_name}"
     end
 
     def download(

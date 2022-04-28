@@ -28,11 +28,7 @@ module PlaceOS::FrontendLoader::Api
     def self.commits(folder : String, branch : String?, count : Int32 = 50, loader : Loader = Loader.instance)
       metadata = Metadata.instance
       repo = metadata.get_metadata(folder, "current_repo")
-      remote_type = metadata.remote_type(folder)
-      return unless remote_type
-      loader
-        .remote_for(remote_type)
-        .commits(repo, branch)[0...count]
+      Remote.remote_for(repo).commits(repo, branch)[0...count]
     end
 
     # Returns an array of branches for a repository
@@ -48,11 +44,7 @@ module PlaceOS::FrontendLoader::Api
     def self.branches(folder, loader : Loader = Loader.instance)
       metadata = Metadata.instance
       repo = metadata.get_metadata(folder, "current_repo")
-      remote_type = metadata.remote_type(folder)
-      return unless remote_type
-      loader
-        .remote_for(remote_type)
-        .branches(repo)
+      Remote.remote_for(repo).branches(repo)
     end
 
     get "/:folder_name/releases", :releases do
@@ -67,19 +59,13 @@ module PlaceOS::FrontendLoader::Api
     def self.releases(folder, count : Int32 = 50, loader : Loader = Loader.instance)
       metadata = Metadata.instance
       repo = metadata.get_metadata(folder, "current_repo")
-      remote_type = metadata.remote_type(folder)
-      return unless remote_type
-      loader
-        .remote_for(remote_type)
-        .releases(repo)[0...count]
+      Remote.remote_for(repo).releases(repo)[0...count]
     end
 
     def self.default_branch(folder, loader : Loader = Loader.instance) : String
       metadata = Metadata.instance
       repo = metadata.get_metadata(folder, "current_repo")
-      remote_type = metadata.remote_type(folder)
-      return "master" unless remote_type
-      loader.remote_for(remote_type).default_branch(repo)
+      Remote.remote_for(repo).default_branch(repo)
     end
 
     # Returns a hash of folder name to commits

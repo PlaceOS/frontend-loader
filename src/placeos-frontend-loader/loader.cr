@@ -19,8 +19,6 @@ module PlaceOS::FrontendLoader
     private alias Remote = PlaceOS::FrontendLoader::Remote
     private alias Type = PlaceOS::FrontendLoader::Remote::Reference::Type
 
-    private getter remotes : Hash(Type, Remote) = Hash(Type, Remote).new
-
     Habitat.create do
       setting content_directory : String = WWW
       setting update_crontab : String = CRON
@@ -40,22 +38,10 @@ module PlaceOS::FrontendLoader
     getter update_crontab : String
     private property update_cron : Tasker::CRON(Int64)? = nil
 
-    def remote_for(type : Type) : Remote
-      case type
-      in Type::Github
-        PlaceOS::FrontendLoader::Github.new
-      in Type::GitLab
-        PlaceOS::FrontendLoader::GitLab.new
-      end
-    end
-
     def initialize(
       @content_directory : String = Loader.settings.content_directory,
       @update_crontab : String = Loader.settings.update_crontab
     )
-      Type.values.each do |key|
-        @remotes[key] = remote_for(key)
-      end
       super()
     end
 
@@ -73,7 +59,7 @@ module PlaceOS::FrontendLoader
     # Frontend loader implicitly and idempotently creates a base www
     protected def create_base_www
       base_ref = Remote::Reference.new(url: BASE_REF, branch: "master")
-      remotes[base_ref.remote_type].download(ref: base_ref, path: File.expand_path(content_directory))
+      base_ref.remote.download(ref: base_ref, path: File.expand_path(content_directory))
     end
 
     protected def start_update_cron : Nil
@@ -105,7 +91,6 @@ module PlaceOS::FrontendLoader
         Loader.load(
           repository: repository,
           content_directory: @content_directory,
-          remotes: @remotes
         )
       in Action::Deleted
         # Unload the repository
@@ -121,21 +106,17 @@ module PlaceOS::FrontendLoader
 
     def self.load(
       repository : Model::Repository,
-      content_directory : String,
-      remotes : Hash(Type, Remote)
+      content_directory : String
     )
       content_directory = File.expand_path(content_directory)
       repository_directory = File.expand_path(File.join(content_directory, repository.folder_name))
-
       repository_commit = repository.commit_hash
 
       unload(repository, content_directory) if repository.uri_changed? && Dir.exists?(repository_directory)
 
       # Download and extract the repository at given branch or commit
       ref = Remote::Reference.from_repository(repository)
-
-      current_remote = remotes[ref.remote_type]
-
+      current_remote = ref.remote
       current_remote.download(ref: ref, hash: ref.hash, branch: ref.branch, path: repository_directory)
 
       # Grab commit for the downloaded/extracted repository
