@@ -76,11 +76,10 @@ module PlaceOS::FrontendLoader
           uri:        repository_uri,
         } }
 
-        dest_path = Path.new(["./", path])
-        Dir.mkdir_p(dest_path) if !Dir.exists?(dest_path)
+        Dir.mkdir_p(path) if !Dir.exists?(path)
 
-        git = GitRepo.new(dest_path.to_s)
-        git.init if !Dir.exists?(Path.new(["./", path, ".git"]))
+        git = GitRepo.new(path)
+        git.init if !Dir.exists?(Path.new(path, ".git"))
         git.remove_origin
 
         # origin might have changed
