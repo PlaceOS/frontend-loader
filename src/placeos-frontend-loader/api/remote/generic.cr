@@ -46,6 +46,10 @@ module PlaceOS::FrontendLoader
         stdout = IO::Memory.new
         success = Process.new("git", {"-C", path, "reset", "--hard"}, output: stdout, error: stdout).wait.success?
         raise "failed to git reset\n#{stdout}" unless success
+
+        stdout = IO::Memory.new
+        success = Process.new("git", {"-C", path, "clean", "-fd", "-fx"}, output: stdout, error: stdout).wait.success?
+        raise "failed to git clean\n#{stdout}" unless success
       end
     end
 

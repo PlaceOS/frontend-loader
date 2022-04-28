@@ -73,7 +73,7 @@ module PlaceOS::FrontendLoader
 
           download_archive(archive_url, temp_tar_name)
           extract_archive(path, temp_tar_name)
-          save_metadata(repository_folder_name, hash, ref.repo_name, branch, ref.remote_type)
+          save_metadata(repository_folder_name, hash, repository_uri, branch, ref.remote_type)
         rescue ex : KeyError | File::Error
           Log.error(exception: ex) { "Could not download repository: #{ex.message}" }
         end
