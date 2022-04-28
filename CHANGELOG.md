@@ -1,3 +1,9 @@
+## v2.3.0 (2022-04-28)
+
+### Feat
+
+- add support for generic repositories ([#60](https://github.com/PlaceOS/frontend-loader/pull/60))
+
 ## v2.2.1 (2022-04-28)
 
 ### Fix
