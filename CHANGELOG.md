@@ -1,4 +1,9 @@
-## Unreleased
+## v2.2.1 (2022-04-28)
+
+### Fix
+
+- **logging**: bring inline with other services ([#59](https://github.com/PlaceOS/frontend-loader/pull/59))
+- **telemetry**: seperate telemetry file
 
 ## v2.2.0 (2022-04-27)
 
