@@ -21,7 +21,7 @@ module PlaceOS::FrontendLoader::Api
     end
 
     it "gets the default branch of a generic repository" do
-      repository = example_repository(TEST_FOLDER, uri: "https://bitbucket.csiro.au/scm/~deg032/bloom-filter-demo.git")
+      repository = example_repository(TEST_FOLDER, uri: "https://bitbucket.org/cotag/angular_core_test.git")
 
       loader = Loader.new
       loader.process_resource(:created, repository).success?.should be_true
@@ -31,7 +31,7 @@ module PlaceOS::FrontendLoader::Api
     end
 
     it "fetches a specific commit of a generic repository" do
-      repository = example_repository(TEST_FOLDER, uri: "https://bitbucket.csiro.au/scm/~deg032/bloom-filter-demo.git", commit: "3a0f6113928090e232a0d60066e97e18fea85e19")
+      repository = example_repository(TEST_FOLDER, uri: "https://bitbucket.org/cotag/angular_core_test.git", commit: "5bb5855038cc1ff63636223f389b5b927592e1f8")
       loader = Loader.new
       loader.process_resource(:created, repository).success?.should be_true
     end

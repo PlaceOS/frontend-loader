@@ -21,7 +21,7 @@ module PlaceOS::FrontendLoader
 
       def remove_origin
         # This only fails when there is no origin specified
-        Process.new("git", {"-C", path, "remove", "origin"}).wait.success?
+        Process.new("git", {"-C", path, "remote", "remove", "origin"}).wait.success?
       end
 
       def add_origin(repository_uri : String)
@@ -80,15 +80,15 @@ module PlaceOS::FrontendLoader
 
         git = GitRepo.new(path)
         git.init if !Dir.exists?(Path.new(path, ".git"))
-        git.remove_origin
 
         # origin might have changed
+        git.remove_origin
         git.add_origin repository_uri
 
         if !hash.presence || hash == "HEAD"
           git.fetch branch    # git fetch --depth 1 origin branch
-          git.checkout branch # git checkout branch
           git.reset           # git reset --hard
+          git.checkout branch # git checkout branch
         else
           git.reset
           git.fetch hash            # git fetch --depth 1 origin <sha1>

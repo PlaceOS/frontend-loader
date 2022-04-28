@@ -195,9 +195,9 @@ module PlaceOS::FrontendLoader
     end
 
     def get_commit_hashes(repo_url : String)
-      uri = repo_url.gsub("www.", "")
+      uri = url(repo_url).gsub("www.", "")
       stdout = IO::Memory.new
-      Process.new("git", ["ls-remote", uri], output: stdout).wait
+      Process.new("git", {"ls-remote", uri}, output: stdout).wait
       output = stdout.to_s.split('\n')
       output.compact_map do |ref|
         next if ref.empty?
