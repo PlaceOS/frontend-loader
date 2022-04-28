@@ -1,5 +1,11 @@
 ## Unreleased
 
+## v2.2.0 (2022-04-27)
+
+### Feat
+
+- **logging**: configure OpenTelemetry
+
 ## v2.1.0 (2022-04-26)
 
 ### Feat
