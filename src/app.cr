@@ -1,6 +1,7 @@
 require "option_parser"
 
 require "./constants"
+require "connect-proxy/ext/http-client"
 
 # Server defaults
 host = PlaceOS::FrontendLoader::HOST
@@ -37,7 +38,9 @@ OptionParser.parse(ARGV.dup) do |parser|
 
   parser.on("-c URL", "--curl=URL", "Perform a basic health check by requesting the URL") do |url|
     begin
-      response = HTTP::Client.get url
+      uri = URI.parse(url)
+      client = HTTP::Client.new(uri, ignore_env: true)
+      response = client.get uri.to_s
       exit 0 if (200..499).includes? response.status_code
       puts "health check failed, received response code #{response.status_code}"
       exit 1
@@ -103,6 +106,7 @@ spawn(same_thread: true) do
   begin
     PlaceOS::FrontendLoader::Loader.instance.start
   rescue error
+    puts error.inspect_with_backtrace
     PlaceOS::FrontendLoader::Loader::Log.error(exception: error) { "startup failed" }
     server.close
   end
