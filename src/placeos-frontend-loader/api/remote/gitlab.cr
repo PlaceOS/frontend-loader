@@ -16,7 +16,7 @@ module PlaceOS::FrontendLoader
 
     private def extract_repo_name(repo : String)
       repo = repo.downcase
-      repo.includes?("://") ? repo.split(".com/").last : repo
+      repo.includes?("://") ? repo.split(".com/").last.rchop(".git") : repo
     end
 
     def get_repo_id(repo_name : String)
@@ -68,7 +68,7 @@ module PlaceOS::FrontendLoader
         } }
 
         begin
-          repo_encoded = ref.repo_name.gsub("/", "%2F")
+          repo_encoded = ref.repo_name.rchop(".git").gsub("/", "%2F")
           archive_url = "https://gitlab.com/api/v4/projects/#{repo_encoded}/repository/archive.tar.gz?sha=#{hash}"
 
           download_archive(archive_url, temp_tar_name)

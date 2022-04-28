@@ -14,7 +14,7 @@ module PlaceOS::FrontendLoader
 
     private def extract_repo_name(repo : String)
       repo = repo.downcase
-      repo.includes?("://") ? repo.split(".com/").last : repo
+      repo.includes?("://") ? repo.split(".com/").last.rchop(".git") : repo
     end
 
     # Returns the release tags for a given repo
@@ -61,7 +61,7 @@ module PlaceOS::FrontendLoader
           hash = get_hash(hash, repository_uri, tag, branch)
           temp_tar_name = Random.rand(UInt32).to_s
           begin
-            archive_url = "https://github.com/#{ref.repo_name}/archive/#{hash}.tar.gz"
+            archive_url = "https://github.com/#{ref.repo_name.rchop(".git")}/archive/#{hash}.tar.gz"
             download_archive(archive_url, temp_tar_name)
             extract_archive(path, temp_tar_name)
             save_metadata(repository_folder_name, hash, repository_uri, branch, ref.remote_type)
