@@ -53,9 +53,14 @@ module PlaceOS::FrontendLoader
       end
     end
 
-    # none available for generic repos
     def releases(repo : String) : Array(String)
-      [""]
+      stdout = IO::Memory.new
+      Process.new("git", {"ls-remote", "--tags", @uri.to_s}, output: stdout).wait
+      output = stdout.to_s.split('\n')
+      output.compact_map do |ref|
+        next if ref.empty?
+        ref.split('\t', limit: 2)[1].lchop("refs/tags/")
+      end
     end
 
     def url(repo_name : String) : String
@@ -89,14 +94,14 @@ module PlaceOS::FrontendLoader
         git.remove_origin
         git.add_origin repository_uri
 
-        if !hash.presence || hash == "HEAD"
+        if !tag.presence && (!hash.presence || hash == "HEAD")
           git.fetch branch    # git fetch --depth 1 origin branch
           git.reset           # git reset --hard
           git.checkout branch # git checkout branch
         else
           git.reset
-          git.fetch hash            # git fetch --depth 1 origin <sha1>
-          git.checkout "FETCH_HEAD" # git checkout FETCH_HEAD
+          git.fetch(tag.presence ? tag.not_nil! : hash.not_nil!) # git fetch --depth 1 origin <sha1>
+          git.checkout "FETCH_HEAD"                              # git checkout FETCH_HEAD
         end
 
         save_metadata(repository_folder_name, hash, repository_uri, branch, ref.remote_type)
