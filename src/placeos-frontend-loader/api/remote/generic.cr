@@ -95,7 +95,7 @@ module PlaceOS::FrontendLoader
           git.checkout "FETCH_HEAD" # git checkout FETCH_HEAD
         end
 
-        save_metadata(path, hash, repository_uri, branch, ref.remote_type)
+        save_metadata(repository_folder_name, hash, repository_uri, branch, ref.remote_type)
       end
     end
   end

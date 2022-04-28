@@ -30,9 +30,6 @@ module PlaceOS::FrontendLoader
       end
     end
 
-    def remote
-    end
-
     def set_metadata(repo_name, field, value)
       lock.synchronize do
         hash_file["#{repo_name}/metadata/#{field}"] = value.to_s
