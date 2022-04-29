@@ -2,131 +2,25 @@ require "crest"
 require "json"
 
 module PlaceOS::FrontendLoader
-  class Metadata
-    private getter hash_file : HashFile = HashFile
-    private getter lock : Mutex = Mutex.new(protection: Mutex::Protection::Reentrant)
-
-    def initialize
-      hash_file.config({"base_dir" => Dir.current})
-    end
-
-    class_getter instance : Metadata do
-      new
-    end
-
-    def get_metadata(repo_name, field)
-      lock.synchronize do
-        hash_file["#{repo_name}/metadata/#{field}"].to_s.strip
-      end
-    end
-
-    def remote_type(repo_name)
-      lock.synchronize do
-        begin
-          PlaceOS::FrontendLoader::Remote::Reference::Type.parse?(hash_file["#{repo_name}/metadata/remote_type"].to_s.strip)
-        rescue
-          PlaceOS::FrontendLoader::Remote::Reference::Type::Generic
-        end
-      end
-    end
-
-    def set_metadata(repo_name, field, value)
-      lock.synchronize do
-        hash_file["#{repo_name}/metadata/#{field}"] = value.to_s
-      end
-    end
-  end
-
-  abstract class PlaceOS::FrontendLoader::Remote
+  abstract class Remote
     private alias Git = PlaceOS::Compiler::Git
-    private alias Remote = PlaceOS::FrontendLoader::Remote
-
     getter metadata : Metadata
 
     def initialize(@metadata : Metadata = Metadata.instance)
     end
 
-    def self.remote_for(repository_url : URI | String) : Remote
-      uri = repository_url.is_a?(URI) ? repository_url : URI.parse(repository_url)
+    def self.remote_for(repository_uri : URI | String) : Remote
+      uri = repository_uri.is_a?(URI) ? repository_uri : URI.parse(repository_uri)
       {% begin %}
       case uri.host.to_s
       {% for remote in Reference::Type.constants.reject { |rem| rem.stringify == "Generic" } %}
         when .includes?(Reference::Type::{{ remote }}.to_s.downcase)
-          PlaceOS::FrontendLoader::{{ remote.id }}.new
+          {{ remote.id }}.new
       {% end %}
       else
-        PlaceOS::FrontendLoader::Generic.new(uri)
+        Generic.new(uri)
       end
     {% end %}
-    end
-
-    struct Commit
-      include JSON::Serializable
-      getter commit : String
-      getter name : String
-
-      def initialize(@commit, @name)
-      end
-    end
-
-    struct Reference
-      include JSON::Serializable
-
-      enum Type
-        GitLab
-        Github
-        Generic
-      end
-
-      getter uri : URI
-      getter repo_name : String
-      getter remote_type : Reference::Type
-      getter branch : String
-      getter hash : String
-      getter tag : String | Nil
-
-      def initialize(
-        url : String | URI,
-        @branch : String? = "master",
-        @tag : String? = nil,
-        @hash : String? = "HEAD",
-        user : String? = nil,
-        pass : String? = nil
-      )
-        @uri = uri = url.is_a?(URI) ? url : URI.parse(url)
-        if user.presence && pass.presence
-          uri.user = user
-          uri.password = pass
-        end
-
-        @repo_name = uri.path.strip("/")
-        @remote_type = {% begin %}
-          case uri.host.to_s
-            {% for remote in Reference::Type.constants %}
-          when .includes?(Reference::Type::{{ remote }}.to_s.downcase)
-            Reference::Type::{{ remote.id }}
-          {% end %}
-          else
-            Reference::Type::Generic
-          end
-          {% end %}
-      end
-
-      def self.from_repository(repository : Model::Repository)
-        hash = repository.should_pull? ? "HEAD" : repository.commit_hash
-        self.new(url: repository.uri, branch: repository.branch, hash: hash, user: repository.username, pass: repository.decrypt_password)
-      end
-
-      def remote
-        case remote_type
-        in Type::Github
-          PlaceOS::FrontendLoader::Github.new
-        in Type::GitLab
-          PlaceOS::FrontendLoader::GitLab.new
-        in Type::Generic
-          PlaceOS::FrontendLoader::Generic.new(uri)
-        end
-      end
     end
 
     # Returns the commits for a given repo on specified branch
@@ -203,10 +97,9 @@ module PlaceOS::FrontendLoader
       get_hash_head(repository_uri)
     end
 
-    def get_commit_hashes(repo_url : String)
-      uri = url(repo_url).gsub("www.", "")
+    def get_commit_hashes(repository_uri : String)
       stdout = IO::Memory.new
-      Process.new("git", {"ls-remote", uri}, output: stdout).wait
+      Process.new("git", {"ls-remote", "--tags", repository_uri}, output: stdout).wait
       output = stdout.to_s.split('\n')
       output.compact_map do |ref|
         next if ref.empty?
@@ -277,3 +170,7 @@ module PlaceOS::FrontendLoader
     end
   end
 end
+
+require "./metadata"
+require "./commit"
+require "./reference"

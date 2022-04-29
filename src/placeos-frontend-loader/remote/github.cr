@@ -1,4 +1,3 @@
-require "hash_file"
 require "octokit"
 
 require "./remote"

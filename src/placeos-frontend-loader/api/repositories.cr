@@ -1,6 +1,5 @@
 require "digest/sha1"
 require "placeos-compiler/git"
-require "hash_file"
 
 require "./base"
 require "../loader"

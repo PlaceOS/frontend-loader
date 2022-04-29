@@ -65,16 +65,16 @@ module PlaceOS::FrontendLoader
     end
 
     # Releases for a remote repository
-    def releases(repository_url : String)
-      encoded_url = URI.encode_www_form(repository_url)
+    def releases(repository_uri : String)
+      encoded_url = URI.encode_www_form(repository_uri)
       path = "/remotes/#{encoded_url}/releases"
       response = get(path)
       Array(String).from_json(response.body)
     end
 
     # Commits for a remote repository
-    def remote_commits(repository_url : String, branch : String)
-      encoded_url = URI.encode_www_form(repository_url)
+    def remote_commits(repository_uri : String, branch : String)
+      encoded_url = URI.encode_www_form(repository_uri)
       params = HTTP::Params{"branch" => branch}
       path = "/remotes/#{encoded_url}/commits?#{params}"
       response = get(path)
@@ -82,17 +82,17 @@ module PlaceOS::FrontendLoader
     end
 
     # Branches for a remote repository
-    def remote_branches(repository_url : String)
-      encoded_url = URI.encode_www_form(repository_url)
+    def remote_branches(repository_uri : String)
+      encoded_url = URI.encode_www_form(repository_uri)
       path = "/remotes/#{encoded_url}/branches"
       response = get(path)
       Array(String).from_json(response.body)
     end
 
     # Tags for a remote repository
-    def tags(repository_url : String)
-      encoded_url = URI.encode_www_form(repository_url)
-      path = "/remotes/#{encoded_url}/tags"
+    def tags(repository_uri : String)
+      encoded_uri = URI.encode_www_form(repository_uri)
+      path = "/remotes/#{encoded_uri}/tags"
       response = get(path)
       Array(String).from_json(response.body)
     end

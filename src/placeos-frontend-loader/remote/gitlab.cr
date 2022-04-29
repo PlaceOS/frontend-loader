@@ -1,4 +1,3 @@
-require "hash_file"
 require "gitlab"
 
 require "./remote"
@@ -31,7 +30,7 @@ module PlaceOS::FrontendLoader
       # @gitlab_client.tags(repo_id).as_a.map do |value|
       #   value["name"].to_s
       # end
-      [""]
+      [] of String
     end
 
     # Returns the tags for a given repo

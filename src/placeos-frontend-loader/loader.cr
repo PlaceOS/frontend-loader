@@ -8,8 +8,8 @@ require "tasker"
 require "http/client"
 require "crystar"
 
-require "../constants.cr"
-require "./api/remote/*"
+require "../constants"
+require "./remote"
 
 module PlaceOS::FrontendLoader
   class Loader < Resource(Model::Repository)
