@@ -1,3 +1,9 @@
+## v2.3.5 (2022-05-04)
+
+### Fix
+
+- **client**: should use standard commit struct
+
 ## v2.3.4 (2022-05-04)
 
 ### Fix
