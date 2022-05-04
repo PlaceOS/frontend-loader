@@ -4,6 +4,7 @@ require "mutex"
 require "uri"
 
 require "./error"
+require "./api/remote/commit"
 
 module PlaceOS::FrontendLoader
   class Client
@@ -49,7 +50,7 @@ module PlaceOS::FrontendLoader
       params["count"] = count.to_s unless count.nil?
       path = "/repositories/#{folder_name}/commits?#{params}"
       response = get(path)
-      Array(NamedTuple(commit: String, name: String)).from_json(response.body)
+      Array(PlaceOS::FrontendLoader::Commit).from_json(response.body)
     end
 
     # Branches for a frontend folder
