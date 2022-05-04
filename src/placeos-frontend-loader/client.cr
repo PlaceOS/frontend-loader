@@ -78,7 +78,7 @@ module PlaceOS::FrontendLoader
       params = HTTP::Params{"branch" => branch}
       path = "/remotes/#{encoded_url}/commits?#{params}"
       response = get(path)
-      Array(PlaceOS::FrontendLoader::Remote::Commit).from_json(response.body)
+      Array(PlaceOS::FrontendLoader::Commit).from_json(response.body)
     end
 
     # Branches for a remote repository

@@ -1,4 +1,6 @@
+require "file_utils"
 require "./remote"
+require "dir"
 
 module PlaceOS::FrontendLoader
   class Generic < PlaceOS::FrontendLoader::Remote
@@ -6,52 +8,6 @@ module PlaceOS::FrontendLoader
     end
 
     private alias Remote = PlaceOS::FrontendLoader::Remote
-
-    class GitRepo
-      def initialize(@path : String)
-      end
-
-      getter path
-
-      def init
-        stdout = IO::Memory.new
-        success = Process.new("git", {"-C", path, "init"}, output: stdout, error: stdout).wait.success?
-        raise "failed to init git repository\n#{stdout}" unless success
-      end
-
-      def remove_origin
-        # This only fails when there is no origin specified
-        Process.new("git", {"-C", path, "remote", "remove", "origin"}).wait.success?
-      end
-
-      def add_origin(repository_uri : String)
-        stdout = IO::Memory.new
-        success = Process.new("git", {"-C", path, "remote", "add", "origin", repository_uri}, output: stdout, error: stdout).wait.success?
-        raise "failed to add git origin #{repository_uri.inspect}\n#{stdout}" unless success
-      end
-
-      def fetch(branch : String)
-        stdout = IO::Memory.new
-        success = Process.new("git", {"-C", path, "fetch", "--depth", "1", "origin", branch}, output: stdout, error: stdout).wait.success?
-        raise "failed to git fetch #{branch.inspect}\n#{stdout}" unless success
-      end
-
-      def checkout(branch : String)
-        stdout = IO::Memory.new
-        success = Process.new("git", {"-C", path, "checkout", branch}, output: stdout, error: stdout).wait.success?
-        raise "failed to git checkout #{branch.inspect}\n#{stdout}" unless success
-      end
-
-      def reset
-        stdout = IO::Memory.new
-        success = Process.new("git", {"-C", path, "reset", "--hard"}, output: stdout, error: stdout).wait.success?
-        raise "failed to git reset\n#{stdout}" unless success
-
-        stdout = IO::Memory.new
-        success = Process.new("git", {"-C", path, "clean", "-fd", "-fx"}, output: stdout, error: stdout).wait.success?
-        raise "failed to git clean\n#{stdout}" unless success
-      end
-    end
 
     def releases(repo : String) : Array(String)
       stdout = IO::Memory.new
