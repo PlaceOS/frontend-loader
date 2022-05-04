@@ -126,14 +126,13 @@ module PlaceOS::FrontendLoader
       repository_uri = url(repo)
 
       temp_folder = Time.utc.to_unix_ms.to_s + rand(9999).to_s
-      Dir.mkdir temp_folder
-
-      # get the commits
-      git = GitRepo.new(temp_folder)
-      git.commits(repository_uri, branch)
-    ensure
-      # delete the temp folder
-      spawn { FileUtils.rm_rf("temp_folder") }
+      begin
+        Dir.mkdir temp_folder
+        GitRepo.new(temp_folder).commits(repository_uri, branch)
+      ensure
+        # delete the temp folder
+        spawn { FileUtils.rm_rf(temp_folder) }
+      end
     end
 
     # Returns the branches for a given repo
