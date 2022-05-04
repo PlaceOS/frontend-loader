@@ -1,3 +1,9 @@
+## v2.3.4 (2022-05-04)
+
+### Fix
+
+- **remote**: only listing a single commit ([#65](https://github.com/PlaceOS/frontend-loader/pull/65))
+
 ## v2.3.3 (2022-05-03)
 
 ### Fix
