@@ -1,5 +1,6 @@
 require "crest"
 require "json"
+require "./git"
 
 module PlaceOS::FrontendLoader
   class Metadata
@@ -58,15 +59,6 @@ module PlaceOS::FrontendLoader
         PlaceOS::FrontendLoader::Generic.new(uri)
       end
     {% end %}
-    end
-
-    struct Commit
-      include JSON::Serializable
-      getter commit : String
-      getter name : String
-
-      def initialize(@commit, @name)
-      end
     end
 
     struct Reference
@@ -130,23 +122,18 @@ module PlaceOS::FrontendLoader
     end
 
     # Returns the commits for a given repo on specified branch
-    def commits(repo : String, branch : String) : Array(Remote::Commit)
+    def commits(repo : String, branch : String) : Array(Commit)
       repository_uri = url(repo)
 
-      if branch.nil?
-        get_commit_hashes(repository_uri).map do |name, commit|
-          Remote::Commit.new(
-            commit: commit,
-            name: name.split("refs/heads/", limit: 2).last
-          )
-        end
-      else
-        commit = Remote::Commit.new(
-          commit: get_commit_hashes(repository_uri, branch),
-          name: branch
-        )
-        [commit]
-      end
+      temp_folder = Time.utc.to_unix_ms.to_s + rand(9999).to_s
+      Dir.mkdir temp_folder
+
+      # get the commits
+      git = GitRepo.new(temp_folder)
+      git.commits(repository_uri, branch)
+    ensure
+      # delete the temp folder
+      spawn { FileUtils.rm_rf("temp_folder") }
     end
 
     # Returns the branches for a given repo

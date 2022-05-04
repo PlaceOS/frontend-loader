@@ -37,6 +37,11 @@ module PlaceOS::FrontendLoader
       repo_name.includes?("://") ? repo_name : "https://www.github.com/#{repo_name}"
     end
 
+    # TODO:: use the github API to get the commits
+    # (requires an update to octokit)
+    # def commits(repo : String, branch : String) : Array(Commit)
+    # end
+
     def download(
       ref : Remote::Reference,
       path : String,
