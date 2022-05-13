@@ -29,21 +29,9 @@ shards:
     git: https://github.com/spider-gazelle/bindata.git
     version: 1.10.0
 
-  bisect:
-    git: https://github.com/spider-gazelle/bisect.git
-    version: 1.2.1
-
   connect-proxy:
     git: https://github.com/spider-gazelle/connect-proxy.git
     version: 2.0.0
-
-  crc16:
-    git: https://github.com/maiha/crc16.cr.git
-    version: 0.1.0
-
-  crest:
-    git: https://github.com/mamantoha/crest.git
-    version: 1.2.1
 
   cron_parser:
     git: https://github.com/kostya/cron_parser.git
@@ -61,25 +49,13 @@ shards:
     git: https://github.com/crystal-lang/crystal-db.git
     version: 0.11.0
 
-  debug:
-    git: https://github.com/sija/debug.cr.git
-    version: 2.0.1
-
   defined:
     git: https://github.com/wyhaines/defined.cr.git
-    version: 0.3.3
-
-  etcd:
-    git: https://github.com/place-labs/crystal-etcd.git
-    version: 1.2.5
+    version: 0.3.4
 
   exception_page:
     git: https://github.com/crystal-loot/exception_page.git
     version: 0.3.0
-
-  exec_from:
-    git: https://github.com/place-labs/exec_from.git
-    version: 2.0.0
 
   faker:
     git: https://github.com/askn/faker.git
@@ -89,41 +65,17 @@ shards:
     git: https://github.com/crystal-community/future.cr.git
     version: 1.0.0
 
-  gitlab:
-    git: https://github.com/icyleaf/gitlab.cr.git
-    version: 0.7.0
+  git-repository:
+    git: https://github.com/place-labs/git-repository.git
+    version: 1.1.1
 
   habitat:
     git: https://github.com/luckyframework/habitat.git
     version: 0.4.7
 
-  halite:
-    git: https://github.com/icyleaf/halite.git
-    version: 0.12.0
-
-  hash_file:
-    git: https://github.com/tassja/hash_file.git
-    version: 0.4
-
-  hound-dog:
-    git: https://github.com/place-labs/hound-dog.git
-    version: 2.9.0
-
-  http-client-digest_auth:
-    git: https://github.com/mamantoha/http-client-digest_auth.git
-    version: 0.6.0
-
   http-params-serializable:
     git: https://github.com/place-labs/http-params-serializable.git
     version: 0.5.0
-
-  http_proxy:
-    git: https://github.com/mamantoha/http_proxy.git
-    version: 0.9.0
-
-  ipaddress:
-    git: https://github.com/sija/ipaddress.cr.git
-    version: 0.2.1
 
   jwt:
     git: https://github.com/crystal-community/jwt.git
@@ -137,10 +89,6 @@ shards:
     git: https://github.com/luckyframework/lucky_router.git
     version: 0.5.1
 
-  murmur3:
-    git: https://github.com/aca-labs/murmur3.git
-    version: 0.1.1+git.commit.7cbe25c0ca8d052c9d98c377c824dcb0e038c790
-
   nbchannel:
     git: https://github.com/wyhaines/nbchannel.cr.git
     version: 0.1.0+git.commit.ea6517a837270361695244d14c4b03d84660f113
@@ -148,10 +96,6 @@ shards:
   neuroplastic:
     git: https://github.com/spider-gazelle/neuroplastic.git
     version: 1.11.0
-
-  octokit:
-    git: https://github.com/place-labs/octokit.cr.git
-    version: 0.1.6
 
   open_api:
     git: https://github.com/elbywan/open_api.cr.git
@@ -170,8 +114,8 @@ shards:
     version: 0.2.3+git.commit.1b9fe5de5a599fa38e4bbccf0285f1f020c15c80
 
   opentelemetry-instrumentation:
-    git: https://github.com/place-labs/opentelemetry-instrumentation.cr.git
-    version: 0.2.9+git.commit.2bed74e37ba785bc89200189ddfd00edde3452cc
+    git: https://github.com/wyhaines/opentelemetry-instrumentation.cr.git
+    version: 0.3.0+git.commit.1e9e8421ec4add04048c305478d4e071b0f08747
 
   pars: # Overridden
     git: https://github.com/spider-gazelle/pars.git
@@ -181,33 +125,17 @@ shards:
     git: https://github.com/wyhaines/parsedate.cr.git
     version: 0.1.2
 
-  placeos-compiler:
-    git: https://github.com/placeos/compiler.git
-    version: 4.9.1
-
-  placeos-driver:
-    git: https://github.com/placeos/driver.git
-    version: 4.1.2
-
   placeos-log-backend:
     git: https://github.com/place-labs/log-backend.git
-    version: 0.8.10
+    version: 0.10.2
 
   placeos-models:
     git: https://github.com/placeos/models.git
-    version: 8.4.0
+    version: 8.7.0
 
   placeos-resource:
     git: https://github.com/place-labs/resource.git
-    version: 2.5.2
-
-  pool:
-    git: https://github.com/ysbaddaden/pool.git
-    version: 0.2.4
-
-  priority-queue:
-    git: https://github.com/spider-gazelle/priority-queue.git
-    version: 1.0.1
+    version: 2.5.4
 
   promise:
     git: https://github.com/spider-gazelle/promise.git
@@ -221,18 +149,6 @@ shards:
     git: https://github.com/sija/raven.cr.git
     version: 1.9.1+git.commit.d53319dc4ce26fc44f13b9c1c6ffb8699e22899b
 
-  redis:
-    git: https://github.com/stefanwille/crystal-redis.git
-    version: 2.8.3
-
-  redis-cluster:
-    git: https://github.com/caspiano/redis-cluster.cr.git
-    version: 0.8.5
-
-  rendezvous-hash:
-    git: https://github.com/caspiano/rendezvous-hash.git
-    version: 0.3.1
-
   rethinkdb:
     git: https://github.com/kingsleyh/crystal-rethinkdb.git
     version: 0.3.1
@@ -245,25 +161,9 @@ shards:
     git: https://github.com/sija/retriable.cr.git
     version: 0.2.4
 
-  rwlock:
-    git: https://github.com/spider-gazelle/readers-writer.git
-    version: 1.0.7
-
-  secrets-env:
-    git: https://github.com/place-labs/secrets-env.git
-    version: 1.3.1
-
-  simple_retry:
-    git: https://github.com/spider-gazelle/simple_retry.git
-    version: 1.1.1
-
   splay_tree_map:
     git: https://github.com/wyhaines/splay_tree_map.cr.git
     version: 0.2.2
-
-  ssh2:
-    git: https://github.com/spider-gazelle/ssh2.cr.git
-    version: 1.5.3
 
   tasker:
     git: https://github.com/spider-gazelle/tasker.git
@@ -273,15 +173,7 @@ shards:
     git: https://github.com/wyhaines/time-ext.cr.git
     version: 0.1.0+git.commit.175f658235fb6cdc9c804cb96da510fec27f4cd6
 
-  tokenizer:
-    git: https://github.com/spider-gazelle/tokenizer.git
-    version: 1.1.1
-
   tracer:
     git: https://github.com/wyhaines/tracer.cr.git
     version: 0.3.1
-
-  ulid:
-    git: https://github.com/place-labs/ulid.git
-    version: 0.1.2
 

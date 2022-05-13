@@ -1,5 +1,6 @@
 # Application dependencies
 require "action-controller"
+require "git-repository"
 
 # Application code
 require "./logging"

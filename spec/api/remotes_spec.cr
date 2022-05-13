@@ -15,7 +15,7 @@ module PlaceOS::FrontendLoader::Api
         encoded_url = URI.encode_www_form("https://www.github.com/PlaceOS/frontend-loader")
         route = "#{remotes_base}/#{encoded_url}/commits"
         result = curl("GET", route)
-        Array(PlaceOS::FrontendLoader::Commit).from_json(result.body).should_not be_empty
+        Array(GitRepository::Commit).from_json(result.body).should_not be_empty
       end
 
       it "lists branches for a given repository" do

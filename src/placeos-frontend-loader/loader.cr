@@ -1,6 +1,5 @@
 require "file_utils"
 require "habitat"
-require "placeos-compiler/git"
 require "placeos-models/repository"
 require "placeos-resource"
 require "tasker"
@@ -9,21 +8,14 @@ require "http/client"
 require "crystar"
 
 require "../constants.cr"
-require "./api/remote/*"
 
 module PlaceOS::FrontendLoader
   class Loader < Resource(Model::Repository)
     Log = ::Log.for(self)
 
-    private alias Git = PlaceOS::Compiler::Git
-    private alias Remote = PlaceOS::FrontendLoader::Remote
-    private alias Type = PlaceOS::FrontendLoader::Remote::Reference::Type
-
     Habitat.create do
       setting content_directory : String = WWW
       setting update_crontab : String = CRON
-      setting username : String? = GIT_USER
-      setting password : String? = GIT_PASS
     end
 
     class_getter instance : Loader do
@@ -33,15 +25,26 @@ module PlaceOS::FrontendLoader
     end
 
     getter content_directory : String
-    getter username : String?
-    private getter password : String?
     getter update_crontab : String
     private property update_cron : Tasker::CRON(Int64)? = nil
+    @www_commit : String = ""
+
+    record RepoCache, repo : Model::Repository, cache : GitRepository::Interface, commit : String
+    class_getter id_lookup : Hash(String, RepoCache) = {} of String => RepoCache
+    class_getter uri_lookup : Hash(String, RepoCache) = {} of String => RepoCache
+    class_getter folder_lookup : Hash(String, RepoCache) = {} of String => RepoCache
 
     def initialize(
       @content_directory : String = Loader.settings.content_directory,
       @update_crontab : String = Loader.settings.update_crontab
     )
+      # we want to cache this repo and then copy any changes into www folder
+      @www_repo = GitRepository.new(BASE_REF, branch: WWW_BRANCH)
+
+      # ensure the www directory exists on the volume
+      www_folder = File.expand_path(content_directory)
+      Dir.mkdir_p www_folder
+
       super()
     end
 
@@ -58,8 +61,30 @@ module PlaceOS::FrontendLoader
 
     # Frontend loader implicitly and idempotently creates a base www
     protected def create_base_www
-      base_ref = Remote::Reference.new(url: BASE_REF, branch: "master")
-      base_ref.remote.download(ref: base_ref, path: File.expand_path(content_directory))
+      # use our history cache to check if there is a new version available
+      www_folder = File.expand_path(content_directory)
+      branch = WWW_BRANCH
+      latest_commit = @www_repo.commits(branch, 1).first.hash
+      if @www_commit != latest_commit
+        temp_path = File.join(www_folder, "#{Time.utc.to_unix_ms}_#{rand(9999)}")
+        begin
+          # 1. clone the repo locally (handled by the library)
+          # 2. copy the files to the volume in a temp directory
+          @www_repo.fetch_commit(latest_commit, temp_path)
+
+          # 3. move the files into place (ignore hidden files)
+          FileUtils.mv(Dir.entries(temp_path).reject!(&.starts_with?('.')), www_folder)
+
+          # 4. update the commit
+          @www_commit = latest_commit
+        rescue error
+          Log.error(exception: error) { "failed to update or create the www folder" }
+          raise error
+        ensure
+          # clean up the temp directory
+          FileUtils.rm_rf(temp_path)
+        end
+      end
     end
 
     protected def start_update_cron : Nil
@@ -108,45 +133,81 @@ module PlaceOS::FrontendLoader
       repository : Model::Repository,
       content_directory : String
     )
-      content_directory = File.expand_path(content_directory)
-      repository_directory = File.expand_path(File.join(content_directory, repository.folder_name))
-      repository_commit = repository.commit_hash
+      old_folder_name = repository.folder_name
+      rebuild_cache = true
 
-      unload(repository, content_directory) if repository.uri_changed? && Dir.exists?(repository_directory)
+      # check for any relevant changes
+      if loaded = id_lookup[repository.id]?
+        old_repo = loaded.repo
+        old_folder_name = old_repo.folder_name
 
-      # Download and extract the repository at given branch or commit
-      ref = Remote::Reference.from_repository(repository)
-      current_remote = ref.remote
-      current_remote.download(ref: ref, hash: ref.hash, branch: ref.branch, path: repository_directory)
-
-      # Grab commit for the downloaded/extracted repository
-      checked_out_commit = Api::Repositories.current_commit(repository_directory)
-
-      # Update model commit iff...
-      # - the repository is not held at HEAD
-      # - the commit has changed
-      unless checked_out_commit.starts_with?(repository_commit) || repository_commit == "HEAD"
-        Log.info { {
-          message:           "updating commit on Repository document",
-          current_commit:    checked_out_commit,
-          repository_commit: repository_commit,
-          folder_name:       repository.folder_name,
-        } }
-
-        # Refresh the repository's `commit_hash`
-        repository_commit = checked_out_commit
-        repository.commit_hash = checked_out_commit
-        repository.update
+        if (
+             old_folder_name == repository.folder_name &&
+             old_repo.branch == repository.branch &&
+             old_repo.username == repository.username &&
+             old_repo.password == repository.password &&
+             old_repo.uri == repository.uri
+           )
+          rebuild_cache = false
+        else
+          id_lookup.delete(old_repo.id)
+          uri_lookup.delete(old_repo.uri)
+          folder_lookup.delete(old_repo.folder_name)
+        end
       end
 
-      Log.info { {
-        message:           "loaded repository",
-        commit:            checked_out_commit,
-        branch:            repository.branch,
-        repository:        repository.folder_name,
-        repository_commit: repository_commit,
-        uri:               repository.uri,
-      } }
+      # rebuild caches
+      cache = if rebuild_cache
+                GitRepository.new(repository.uri, repository.username, repository.decrypt_password, repository.branch)
+              else
+                repo_cache = id_lookup[repository.id]
+                old_commit_hash = repo_cache.commit
+                repo_cache.cache
+              end
+
+      # grab the required commit
+      new_commit_hash = repository.commit_hash == "HEAD" ? cache.commits(repository.branch, depth: 1).first.hash : repository.commit_hash
+      download_required = rebuild_cache || new_commit_hash != old_commit_hash
+
+      repo_cache = RepoCache.new(repository, cache, new_commit_hash)
+      id_lookup[repository.id.not_nil!] = repo_cache
+      id_lookup[repository.uri.not_nil!] = repo_cache
+      id_lookup[repository.folder_name.not_nil!] = repo_cache
+
+      # update files
+      if download_required
+        content_directory = File.expand_path(content_directory)
+        repository_directory = File.join(content_directory, repository.folder_name)
+        commit_ref = repository.commit_hash == "HEAD" ? repository.branch : repository.commit_hash
+        commit = cache.fetch_commit(commit_ref, repository_directory)
+
+        # remove old files if folder name changed
+        if old_folder_name != repository.folder_name
+          FileUtils.rm_rf(old_folder_name)
+        end
+
+        # TODO:: We should have a target and current commit
+        # unless repository.current_commit_hash == commit.hash
+        #  Log.info { {
+        #    message:           "updating commit on Repository document",
+        #    current_commit:    commit.hash,
+        #    repository_commit: repository.commit_hash,
+        #    folder_name:       repository.folder_name,
+        #  } }
+        #  repository.commit_hash = commit.hash
+        #  repository.update
+        # end
+
+        Log.info { {
+          message:           "updated frontend repository",
+          commit:            commit.hash,
+          branch:            repository.branch,
+          repository:        repository.folder_name,
+          repository_commit: repository.commit_hash,
+          uri:               repository.uri,
+        } }
+      end
+
       Resource::Result::Success
     end
 

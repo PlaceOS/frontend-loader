@@ -3,55 +3,43 @@ module PlaceOS::FrontendLoader::Api
     base "/api/frontend-loader/v1/remotes"
     Log = ::Log.for(self)
 
-    private alias Remote = PlaceOS::FrontendLoader::Remote
+    protected def get_repository_uri
+      # NOTE:: expects the username and password to be encoded into the URL
+      url = params["repository_url"]
+      URI.parse(URI.decode_www_form(url))
+    end
 
     # Returns an array of releases for a repository
     get "/:repository_url/releases", :releases do
-      url = params["repository_url"]
-      uri = URI.parse(URI.decode_www_form(url))
-
-      remote = Remote.remote_for(uri)
-      repo_name = uri.path.strip("/")
-
-      releases = remote.releases(repo_name)
-      releases.nil? ? head :not_found : render json: releases
+      repo = GitRepository.new(get_repository_uri)
+      if repo.is_a?(GitRepository::Releases)
+        render json: repo.releases
+      else
+        render json: [] of String
+      end
     end
 
     # Returns an array of commits for a repository
     get "/:repository_url/commits", :commits do
-      url = params["repository_url"]
-      uri = URI.parse(URI.decode_www_form(url))
+      repo = GitRepository.new(get_repository_uri)
+      branch = query_params["branch"]?.presence || repo.default_branch
+      depth = (query_params["depth"]? || 50).to_i
+      file = query_params["file"]?.presence
 
-      remote = Remote.remote_for(uri)
-      repo_name = uri.path.strip("/")
-      branch = query_params["branch"]?.presence || "master"
-
-      commits = remote.commits(repo_name, branch)
-      commits.nil? ? head :not_found : render json: commits
+      commits = file ? repo.commits(branch, file, depth) : repo.commits(branch, depth)
+      render json: commits
     end
 
-    # Returns an array of branches for a repository
+    # Returns an array of branches
     get "/:repository_url/branches", :branches do
-      url = params["repository_url"]
-      uri = URI.parse(URI.decode_www_form(url))
-
-      remote = Remote.remote_for(uri)
-      repo_name = uri.path.strip("/")
-
-      branches = remote.branches(repo_name)
-      branches.nil? ? head :not_found : render json: branches
+      repo = GitRepository.new(get_repository_uri)
+      render json: repo.branches.keys
     end
 
-    # Returns an array of tags for a repository
+    # Returns an array of tags
     get "/:repository_url/tags", :tags do
-      url = params["repository_url"]
-      uri = URI.parse(URI.decode_www_form(url))
-
-      remote = Remote.remote_for(uri)
-      repo_name = uri.path.strip("/")
-
-      tags = remote.tags(repo_name)
-      tags.nil? ? head :not_found : render json: tags
+      repo = GitRepository.new(get_repository_uri)
+      render json: repo.tags.keys
     end
   end
 end

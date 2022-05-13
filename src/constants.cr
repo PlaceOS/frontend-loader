@@ -1,5 +1,3 @@
-require "secrets-env"
-
 module PlaceOS::FrontendLoader
   APP_NAME     = "frontend-loader"
   VERSION      = {{ `shards version "#{__DIR__}"`.chomp.stringify.downcase }}
@@ -22,7 +20,8 @@ module PlaceOS::FrontendLoader
 
   GITLAB_TOKEN = ENV["GITLAB_TOKEN"]? || ""
 
-  BASE_REF = "https://www.github.com/PlaceOS/www-core"
+  BASE_REF   = "https://www.github.com/PlaceOS/www-core"
+  WWW_BRANCH = "master"
 
   # NOTE:: following used in `./placeos-frontend-loader/client.cr`
   # URI.parse(ENV["PLACE_LOADER_URI"]? || "http://127.0.0.1:3000")

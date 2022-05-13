@@ -69,8 +69,6 @@ require "./config"
 PlaceOS::FrontendLoader::Loader.configure do |settings|
   content_directory.try { |cd| settings.content_directory = cd }
   update_crontab.try { |uc| settings.update_crontab = uc }
-  git_username.try { |gu| settings.username = gu }
-  git_password.try { |gp| settings.password = gp }
 end
 
 # Server Configuration
