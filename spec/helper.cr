@@ -7,7 +7,7 @@ require "action-controller/server"
 
 require "spec"
 
-TEST_DIR = "test-www"
+TEST_DIR = "/app/test-www"
 
 Spec.before_suite do
   Log.builder.bind "*", :trace, PlaceOS::LogBackend.log_backend

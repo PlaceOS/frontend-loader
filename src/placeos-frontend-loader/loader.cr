@@ -73,7 +73,10 @@ module PlaceOS::FrontendLoader
           @www_repo.fetch_commit(latest_commit, temp_path)
 
           # 3. move the files into place (ignore hidden files)
-          FileUtils.mv(Dir.entries(temp_path).reject!(&.starts_with?('.')), www_folder)
+          FileUtils.mv(Dir.entries(temp_path).compact_map { |file|
+            next if file.starts_with?('.')
+            File.join(temp_path, file)
+          }, www_folder)
 
           # 4. update the commit
           @www_commit = latest_commit
@@ -133,11 +136,16 @@ module PlaceOS::FrontendLoader
       repository : Model::Repository,
       content_directory : String
     )
+      # We're checking for a mismatch, so we set this to the current folder
+      # it'll be updated if this repository is already loaded and the old folder name was different
       old_folder_name = repository.folder_name
       rebuild_cache = true
 
+      Log.trace { "loading repository #{repository.folder_name}: #{repository.uri} (branch: #{repository.branch})" }
+
       # check for any relevant changes
       if loaded = id_lookup[repository.id]?
+        Log.trace { "#{repository.folder_name}: already loaded, checking for relevant changes" }
         old_repo = loaded.repo
         old_folder_name = old_repo.folder_name
 
@@ -149,10 +157,12 @@ module PlaceOS::FrontendLoader
              old_repo.uri == repository.uri
            )
           rebuild_cache = false
+          Log.trace { "#{repository.folder_name}: no changes found" }
         else
           id_lookup.delete(old_repo.id)
           uri_lookup.delete(old_repo.uri)
           folder_lookup.delete(old_repo.folder_name)
+          Log.trace { "#{repository.folder_name}: cleaned up old settings" }
         end
       end
 
@@ -166,23 +176,25 @@ module PlaceOS::FrontendLoader
               end
 
       # grab the required commit
+      content_directory = File.expand_path(content_directory)
+      repository_directory = File.join(content_directory, repository.folder_name)
       new_commit_hash = repository.commit_hash == "HEAD" ? cache.commits(repository.branch, depth: 1).first.hash : repository.commit_hash
-      download_required = rebuild_cache || new_commit_hash != old_commit_hash
+      download_required = rebuild_cache || new_commit_hash != old_commit_hash || !Dir.exists?(repository_directory)
 
       repo_cache = RepoCache.new(repository, cache, new_commit_hash)
       id_lookup[repository.id.not_nil!] = repo_cache
-      id_lookup[repository.uri.not_nil!] = repo_cache
-      id_lookup[repository.folder_name.not_nil!] = repo_cache
+      uri_lookup[repository.uri.not_nil!] = repo_cache
+      folder_lookup[repository.folder_name.not_nil!] = repo_cache
 
       # update files
       if download_required
-        content_directory = File.expand_path(content_directory)
-        repository_directory = File.join(content_directory, repository.folder_name)
+        Log.trace { "#{repository.folder_name}: downloading new content" }
         commit_ref = repository.commit_hash == "HEAD" ? repository.branch : repository.commit_hash
         commit = cache.fetch_commit(commit_ref, repository_directory)
 
         # remove old files if folder name changed
         if old_folder_name != repository.folder_name
+          Log.trace { "#{repository.folder_name}: removing old folder: #{old_folder_name}" }
           FileUtils.rm_rf(old_folder_name)
         end
 
@@ -218,6 +230,10 @@ module PlaceOS::FrontendLoader
       content_directory = File.expand_path(content_directory)
       repository_dir = File.expand_path(File.join(content_directory, repository.folder_name))
 
+      id_lookup.delete(repository.id)
+      uri_lookup.delete(repository.uri)
+      folder_lookup.delete(repository.folder_name)
+
       # Ensure we `rmdir` a sane folder
       # - don't delete root
       # - don't delete working directory
@@ -237,6 +253,15 @@ module PlaceOS::FrontendLoader
         if Dir.exists?(repository_dir)
           begin
             FileUtils.rm_rf(repository_dir)
+
+            Log.info { {
+              message:           "removed frontend repository",
+              branch:            repository.branch,
+              repository:        repository.folder_name,
+              repository_commit: repository.commit_hash,
+              uri:               repository.uri,
+            } }
+
             Resource::Result::Success
           rescue
             Log.error { "failed to remove #{repository_dir}" }

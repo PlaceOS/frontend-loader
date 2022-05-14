@@ -4,7 +4,10 @@ module PlaceOS::FrontendLoader::Api
   describe Remotes do
     with_server do
       remotes_base = "/api/frontend-loader/v1/remotes"
+
       it "lists releases for a given repository" do
+        pending!("we need to implement a github specific repository client")
+
         encoded_url = URI.encode_www_form("https://www.github.com/PlaceOS/frontend-loader")
         route = "#{remotes_base}/#{encoded_url}/releases"
         result = curl("GET", route)
