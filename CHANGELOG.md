@@ -1,3 +1,11 @@
+## Unreleased
+
+## v2.3.6 (2022-05-04)
+
+### Fix
+
+- **api/remote**: cleanup temp files
+
 ## v2.3.5 (2022-05-04)
 
 ### Fix

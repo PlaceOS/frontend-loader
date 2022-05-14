@@ -1,5 +1,6 @@
 name: placeos-frontend-loader
 version: 2.4.0
+
 crystal: ">= 1.1.1"
 license: MIT
 authors:
@@ -27,7 +28,7 @@ dependencies:
 
   placeos-log-backend:
     github: place-labs/log-backend
-    version: ">= 0.8.9"
+    version: ">= 0.8.13"
 
   placeos-resource:
     github: place-labs/resource
