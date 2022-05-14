@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Feat
+
+- refactor using git-repository ([#66](https://github.com/PlaceOS/frontend-loader/pull/66))
+
 ## v2.3.6 (2022-05-04)
 
 ### Fix
