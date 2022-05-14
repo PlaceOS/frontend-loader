@@ -132,18 +132,7 @@ module PlaceOS::FrontendLoader
       raise Resource::ProcessingError.new(resource.name, "#{resource.attributes} #{e.inspect_with_backtrace}")
     end
 
-    def self.load(
-      repository : Model::Repository,
-      content_directory : String
-    )
-      # We're checking for a mismatch, so we set this to the current folder
-      # it'll be updated if this repository is already loaded and the old folder name was different
-      old_folder_name = repository.folder_name
-      rebuild_cache = true
-
-      Log.trace { "loading repository #{repository.folder_name}: #{repository.uri} (branch: #{repository.branch})" }
-
-      # check for any relevant changes
+    protected def self.check_for_changes(repository) : Tuple(Bool, String)
       if loaded = id_lookup[repository.id]?
         Log.trace { "#{repository.folder_name}: already loaded, checking for relevant changes" }
         old_repo = loaded.repo
@@ -156,15 +145,28 @@ module PlaceOS::FrontendLoader
              old_repo.password == repository.password &&
              old_repo.uri == repository.uri
            )
-          rebuild_cache = false
           Log.trace { "#{repository.folder_name}: no changes found" }
+          {false, old_folder_name}
         else
           id_lookup.delete(old_repo.id)
           uri_lookup.delete(old_repo.uri)
           folder_lookup.delete(old_repo.folder_name)
           Log.trace { "#{repository.folder_name}: cleaned up old settings" }
+          {true, old_folder_name}
         end
+      else
+        {true, repository.folder_name}
       end
+    end
+
+    def self.load(
+      repository : Model::Repository,
+      content_directory : String
+    )
+      Log.trace { "loading repository #{repository.folder_name}: #{repository.uri} (branch: #{repository.branch})" }
+
+      # check for any relevant changes
+      rebuild_cache, old_folder_name = check_for_changes(repository)
 
       # rebuild caches
       cache = if rebuild_cache

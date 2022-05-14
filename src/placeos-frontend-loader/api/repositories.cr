@@ -46,12 +46,12 @@ module PlaceOS::FrontendLoader::Api
     end
 
     get "/:folder_name/releases", :releases do
-      depth = (params["depth"]? || 50).to_i
+      count = (params["count"]? || 50).to_i
       Log.context.set(folder: folder_name)
 
       repo = repo_cache
       render(json: [] of String) unless repo.is_a?(GitRepository::Releases)
-      render json: repo.as(GitRepository::Releases).releases
+      render json: repo.as(GitRepository::Releases).releases(count)
     end
 
     # Returns a hash of folder name to commits
