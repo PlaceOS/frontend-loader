@@ -1,5 +1,6 @@
 name: placeos-frontend-loader
-version: 2.3.6
+version: 2.4.0
+
 crystal: ">= 1.1.1"
 license: MIT
 authors:
@@ -15,25 +16,11 @@ dependencies:
     github: spider-gazelle/action-controller
     version: ~> 4.4
 
-  crest:
-    github: mamantoha/crest
+  git-repository:
+      github: place-labs/git-repository
 
   crystar:
     github: naqvis/crystar
-
-  gitlab:
-    github: icyleaf/gitlab.cr
-
-  hash_file:
-    github: tassja/hash_file
-
-  octokit:
-    github: place-labs/octokit.cr
-    version: ~> 0.1.2
-
-  placeos-compiler:
-    github: placeos/compiler
-    version: ~> 4.8
 
   placeos-models:
     github: placeos/models
@@ -46,9 +33,6 @@ dependencies:
   placeos-resource:
     github: place-labs/resource
     version: ~> 2.1
-
-  secrets-env:
-    github: place-labs/secrets-env
 
   tasker:
     github: spider-gazelle/tasker

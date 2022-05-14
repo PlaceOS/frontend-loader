@@ -17,9 +17,9 @@ module PlaceOS::FrontendLoader
         loader.startup_finished?.should be_false
         loader.start
 
+        loader.startup_finished?.should be_true
         Dir.exists?(File.join(TEST_DIR, "login")).should be_true
 
-        loader.startup_finished?.should be_true
         loader.stop
         loader.startup_finished?.should be_false
       end
@@ -54,9 +54,10 @@ module PlaceOS::FrontendLoader
         loader.process_resource(:created, repository).success?.should be_true
         repository.reload!
         repository.password = new_token
+        repository.password_will_change!
         repository.save!
 
-        repository.password_will_change!
+        repository = repository.class.find!(repository.id.not_nil!)
         loader.process_resource(:updated, repository).success?.should be_true
 
         sleep 10.seconds
@@ -86,19 +87,18 @@ module PlaceOS::FrontendLoader
 
     it "supports changing a uri" do
       expected_uri = "https://www.github.com/placeOS/private-drivers"
+      repository = repository.class.find!(repository.id.not_nil!)
       repository.username = "robot@place.tech"
 
       loader = Loader.new
       loader.process_resource(:created, repository).success?.should be_true
       Dir.exists?(expected_path).should be_true
 
-      repository.clear_changes_information
+      repository = repository.class.find!(repository.id.not_nil!)
       repository.uri = expected_uri
-      repository.save!
       loader.process_resource(:updated, repository).success?.should be_true
 
       Dir.exists?(expected_path).should be_true
-      Api::Repositories.current_repo(expected_path).should end_with("private-drivers")
       File.exists?("/app/test-www/test-repo/README.md").should be_true
     end
 
@@ -120,32 +120,17 @@ module PlaceOS::FrontendLoader
         updated_branch = "master"
 
         repository.branch = branch
+        repository.save!
+        repository = repository.class.find!(repository.id.not_nil!)
 
         loader.process_resource(:created, repository).success?.should be_true
         Dir.exists?(expected_path).should be_true
-        Api::Repositories.current_branch(expected_path).should eq branch
-        repository.clear_changes_information
+
+        repository = repository.class.find!(repository.id.not_nil!)
         repository.branch = updated_branch
+        repository.save!
         loader.process_resource(:updated, repository).success?.should be_true
         Dir.exists?(expected_path).should be_true
-        Api::Repositories.current_branch(expected_path).should eq updated_branch
-      end
-
-      it "downloads a release asset" do
-        actioner = PlaceOS::FrontendLoader::Github.new
-        actioner.download_latest_asset("tassja/octokit.cr", Dir.current.to_s)
-        File.exists?("new_file.txt").should be_true
-      end
-
-      it "downloads the release asset on repo flag" do
-        repository = example_repository(LAB_TEST_FOLDER, uri: "https://www.github.com/tassja/octokit.cr")
-        repository.release = true
-        repository.save!
-        ref = PlaceOS::FrontendLoader::Remote::Reference.from_repository(repository)
-        expected_path = File.join(TEST_DIR, repository.folder_name)
-        actioner = PlaceOS::FrontendLoader::Github.new
-        actioner.download(ref: ref, path: expected_path)
-        File.exists?(File.join(expected_path, "new_file.txt")).should be_true
       end
     end
   end
