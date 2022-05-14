@@ -22,7 +22,7 @@ module PlaceOS::FrontendLoader::Api
 
       # attempt to find the record in the database
       repo_details = ::PlaceOS::Model::Repository.collection_query do |table|
-        table.get_all(folder_name, index: :authority_id)
+        table.get_all(folder_name, index: :folder_name)
       end.to_a.select!(&.repo_type.interface?).first?
 
       head :not_found unless repo_details
