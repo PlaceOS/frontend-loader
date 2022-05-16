@@ -200,18 +200,6 @@ module PlaceOS::FrontendLoader
           FileUtils.rm_rf(old_folder_name)
         end
 
-        # TODO:: We should have a target and current commit
-        # unless repository.current_commit_hash == commit.hash
-        #  Log.info { {
-        #    message:           "updating commit on Repository document",
-        #    current_commit:    commit.hash,
-        #    repository_commit: repository.commit_hash,
-        #    folder_name:       repository.folder_name,
-        #  } }
-        #  repository.commit_hash = commit.hash
-        #  repository.update
-        # end
-
         Log.info { {
           message:           "updated frontend repository",
           commit:            commit.hash,
@@ -220,6 +208,17 @@ module PlaceOS::FrontendLoader
           repository_commit: repository.commit_hash,
           uri:               repository.uri,
         } }
+      end
+
+      if repository.deployed_commit_hash != new_commit_hash
+        Log.info { {
+          message:           "updating commit on Repository document",
+          current_commit:    new_commit_hash,
+          repository_commit: repository.commit_hash,
+          folder_name:       repository.folder_name,
+        } }
+        repository.deployed_commit_hash = new_commit_hash
+        repository.update
       end
 
       Resource::Result::Success
