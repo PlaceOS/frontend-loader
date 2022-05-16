@@ -115,6 +115,12 @@ module PlaceOS::FrontendLoader
 
       case action
       in Action::Created, Action::Updated
+        # check if the only change was deployed_commit_hash
+        if action.updated?
+          changes = repository.changed_attributes
+          return Resource::Result::Success if changes.size == 1 && changes[:deployed_commit_hash]? && !repository.deployed_commit_hash.nil?
+        end
+
         # Load the repository
         Loader.load(
           repository: repository,
