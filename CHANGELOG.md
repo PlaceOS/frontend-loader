@@ -1,4 +1,8 @@
-## Unreleased
+## v2.4.1 (2022-05-16)
+
+### Fix
+
+- **loader**: provide feedback of the deployed commit hash ([#67](https://github.com/PlaceOS/frontend-loader/pull/67))
 
 ## v2.4.0 (2022-05-14)
 
