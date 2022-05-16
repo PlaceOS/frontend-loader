@@ -17,9 +17,9 @@ module PlaceOS::FrontendLoader
         loader.startup_finished?.should be_false
         loader.start
 
+        loader.startup_finished?.should be_true
         Dir.exists?(File.join(TEST_DIR, "login")).should be_true
 
-        loader.startup_finished?.should be_true
         loader.stop
         loader.startup_finished?.should be_false
       end
@@ -54,9 +54,10 @@ module PlaceOS::FrontendLoader
         loader.process_resource(:created, repository).success?.should be_true
         repository.reload!
         repository.password = new_token
+        repository.password_will_change!
         repository.save!
 
-        repository.password_will_change!
+        repository = repository.class.find!(repository.id.not_nil!)
         loader.process_resource(:updated, repository).success?.should be_true
 
         sleep 10.seconds
@@ -85,21 +86,20 @@ module PlaceOS::FrontendLoader
     end
 
     it "supports changing a uri" do
-      expected_uri = "https://github.com/placeOS/private-drivers"
+      expected_uri = "https://www.github.com/placeOS/private-drivers"
+      repository = repository.class.find!(repository.id.not_nil!)
       repository.username = "robot@place.tech"
 
       loader = Loader.new
       loader.process_resource(:created, repository).success?.should be_true
       Dir.exists?(expected_path).should be_true
 
-      repository.clear_changes_information
+      repository = repository.class.find!(repository.id.not_nil!)
       repository.uri = expected_uri
       loader.process_resource(:updated, repository).success?.should be_true
 
       Dir.exists?(expected_path).should be_true
-
-      url = Compiler::Git.run_git(expected_path, {"remote", "get-url", "origin"}).output.to_s
-      url.strip.should end_with("private-drivers")
+      File.exists?("/app/test-www/test-repo/README.md").should be_true
     end
 
     describe "branches" do
@@ -120,17 +120,17 @@ module PlaceOS::FrontendLoader
         updated_branch = "master"
 
         repository.branch = branch
+        repository.save!
+        repository = repository.class.find!(repository.id.not_nil!)
 
         loader.process_resource(:created, repository).success?.should be_true
         Dir.exists?(expected_path).should be_true
-        Compiler::Git.current_branch(expected_path).should eq branch
 
-        repository.clear_changes_information
+        repository = repository.class.find!(repository.id.not_nil!)
         repository.branch = updated_branch
-
+        repository.save!
         loader.process_resource(:updated, repository).success?.should be_true
         Dir.exists?(expected_path).should be_true
-        Compiler::Git.current_branch(expected_path).should eq updated_branch
       end
     end
   end

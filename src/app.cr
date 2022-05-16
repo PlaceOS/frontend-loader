@@ -1,6 +1,7 @@
 require "option_parser"
 
 require "./constants"
+require "connect-proxy/ext/http-client"
 
 # Server defaults
 host = PlaceOS::FrontendLoader::HOST
@@ -37,7 +38,9 @@ OptionParser.parse(ARGV.dup) do |parser|
 
   parser.on("-c URL", "--curl=URL", "Perform a basic health check by requesting the URL") do |url|
     begin
-      response = HTTP::Client.get url
+      uri = URI.parse(url)
+      client = HTTP::Client.new(uri, ignore_env: true)
+      response = client.get uri.to_s
       exit 0 if (200..499).includes? response.status_code
       puts "health check failed, received response code #{response.status_code}"
       exit 1
@@ -66,12 +69,9 @@ require "./config"
 PlaceOS::FrontendLoader::Loader.configure do |settings|
   content_directory.try { |cd| settings.content_directory = cd }
   update_crontab.try { |uc| settings.update_crontab = uc }
-  git_username.try { |gu| settings.username = gu }
-  git_password.try { |gp| settings.password = gp }
 end
 
 # Server Configuration
-
 server = ActionController::Server.new(port, host)
 
 terminate = Proc(Signal, Nil).new do |signal|
@@ -81,28 +81,16 @@ terminate = Proc(Signal, Nil).new do |signal|
 end
 
 # Detect ctr-c to shutdown gracefully
-# Docker containers use the term signal
 Signal::INT.trap &terminate
+# Docker containers use the term signal
 Signal::TERM.trap &terminate
-
-# Allow signals to change the log level at run-time
-logging = Proc(Signal, Nil).new do |signal|
-  level = signal.usr1? ? Log::Severity::Debug : Log::Severity::Info
-  puts " > Log level changed to #{level}"
-  Log.builder.bind "*", level, PlaceOS::LogBackend.log_backend
-  signal.ignore
-end
-
-# Turn on DEBUG level logging `kill -s USR1 %PID`
-# Default production log levels (INFO and above) `kill -s USR2 %PID`
-Signal::USR1.trap &logging
-Signal::USR2.trap &logging
 
 # Asynchronously start the loader
 spawn(same_thread: true) do
   begin
     PlaceOS::FrontendLoader::Loader.instance.start
   rescue error
+    puts error.inspect_with_backtrace
     PlaceOS::FrontendLoader::Loader::Log.error(exception: error) { "startup failed" }
     server.close
   end

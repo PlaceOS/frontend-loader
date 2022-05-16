@@ -2,21 +2,10 @@ require "../helper"
 
 module PlaceOS::FrontendLoader::Api
   describe Repositories do
-    it "lists commits for a loaded repository" do
-      repository = example_repository(TEST_FOLDER)
+    it "fetches a specific commit of a generic repository" do
+      repository = example_repository(TEST_FOLDER, uri: "https://bitbucket.org/cotag/angular_core_test.git", commit: "5bb5855038cc1ff63636223f389b5b927592e1f8")
       loader = Loader.new
       loader.process_resource(:created, repository).success?.should be_true
-      commits = Api::Repositories.commits(repository.folder_name, repository.branch, loader: loader).not_nil!
-      commits.should_not be_empty
-    end
-
-    it "lists branches for a loaded repository" do
-      repository = example_repository(TEST_FOLDER)
-      loader = Loader.new
-      loader.process_resource(:created, repository).success?.should be_true
-      branches = Api::Repositories.branches(repository.folder_name, loader).not_nil!
-      branches.should_not be_empty
-      branches.should contain("master")
     end
 
     it "lists current commit for all loaded repositories" do
@@ -43,12 +32,6 @@ module PlaceOS::FrontendLoader::Api
         expected_path = File.join(loader.content_directory, folder)
 
         Dir.exists?(expected_path).should be_true
-        Compiler::Git.current_repository_commit(folder, loader.content_directory).should eq checked_out_commit
-        Api::Repositories.branches(folder, loader).not_nil!.should_not be_empty
-        Api::Repositories.commits(folder, branch, loader: loader).not_nil!.should_not be_empty
-        Api::Repositories.commits(folder, "master", loader: loader).not_nil!.should_not be_empty
-
-        Compiler::Git.current_repository_commit(folder, loader.content_directory).should eq checked_out_commit
       end
     end
   end

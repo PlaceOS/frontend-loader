@@ -4,6 +4,7 @@ require "mutex"
 require "uri"
 
 require "./error"
+require "git-repository/commit"
 
 module PlaceOS::FrontendLoader
   class Client
@@ -44,12 +45,12 @@ module PlaceOS::FrontendLoader
     end
 
     # Commits for a frontend folder
-    def commits(folder_name : String, branch : String, count : Int32? = nil)
+    def commits(folder_name : String, branch : String, depth : Int32? = nil)
       params = HTTP::Params{"branch" => branch}
-      params["count"] = count.to_s unless count.nil?
+      params["depth"] = depth.to_s unless depth.nil?
       path = "/repositories/#{folder_name}/commits?#{params}"
       response = get(path)
-      Array(NamedTuple(commit: String, date: String, author: String, subject: String)).from_json(response.body)
+      Array(GitRepository::Commit).from_json(response.body)
     end
 
     # Branches for a frontend folder
@@ -62,6 +63,39 @@ module PlaceOS::FrontendLoader
 
     def version : PlaceOS::Model::Version
       Model::Version.from_json(get("/version").body)
+    end
+
+    # Releases for a remote repository
+    def releases(repository_url : String)
+      encoded_url = URI.encode_www_form(repository_url)
+      path = "/remotes/#{encoded_url}/releases"
+      response = get(path)
+      Array(String).from_json(response.body)
+    end
+
+    # Commits for a remote repository
+    def remote_commits(repository_url : String, branch : String)
+      encoded_url = URI.encode_www_form(repository_url)
+      params = HTTP::Params{"branch" => branch}
+      path = "/remotes/#{encoded_url}/commits?#{params}"
+      response = get(path)
+      Array(GitRepository::Commit).from_json(response.body)
+    end
+
+    # Branches for a remote repository
+    def remote_branches(repository_url : String)
+      encoded_url = URI.encode_www_form(repository_url)
+      path = "/remotes/#{encoded_url}/branches"
+      response = get(path)
+      Array(String).from_json(response.body)
+    end
+
+    # Tags for a remote repository
+    def tags(repository_url : String)
+      encoded_url = URI.encode_www_form(repository_url)
+      path = "/remotes/#{encoded_url}/tags"
+      response = get(path)
+      Array(String).from_json(response.body)
     end
 
     ###########################################################################

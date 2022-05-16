@@ -1,9 +1,11 @@
 name: placeos-frontend-loader
-version: 1.3.0
+version: 2.4.0
+
 crystal: ">= 1.1.1"
 license: MIT
 authors:
   - Caspian Baska <caspian@place.tech>
+  - Tassja Kriek <tassja@place.tech>
 
 targets:
   frontends:
@@ -14,27 +16,35 @@ dependencies:
     github: spider-gazelle/action-controller
     version: ~> 4.4
 
-  placeos-compiler:
-    github: placeos/compiler
-    version: ~> 4.8
+  git-repository:
+      github: place-labs/git-repository
+
+  crystar:
+    github: naqvis/crystar
 
   placeos-models:
     github: placeos/models
-    version: ~> 5.9
+    version: ~> 8.1
 
   placeos-log-backend:
     github: place-labs/log-backend
-    version: ~> 0.2
+    version: ">= 0.8.13"
 
   placeos-resource:
     github: place-labs/resource
     version: ~> 2.1
 
-  secrets-env:
-    github: place-labs/secrets-env
-
   tasker:
     github: spider-gazelle/tasker
+
+  connect-proxy:
+    github: spider-gazelle/connect-proxy
+    version: ~> 2.0
+
+  # Sentry integration
+  raven:
+    github: Sija/raven.cr
+    branch: master
 
 development_dependencies:
   ameba:

@@ -7,7 +7,7 @@ require "action-controller/server"
 
 require "spec"
 
-TEST_DIR = "test-www"
+TEST_DIR = "/app/test-www"
 
 module ExecFrom
   def self.exec_from(
@@ -60,7 +60,7 @@ TEST_FOLDER = "test-repo"
 
 def example_repository(
   folder_name : String = UUID.random.to_s[0..8],
-  uri : String = "https://github.com/placeos/compiler",
+  uri : String = "https://www.github.com/placeos/compiler",
   commit : String = "HEAD",
   branch : String = "master"
 )
@@ -69,6 +69,7 @@ def example_repository(
     existing.uri = uri unless existing.uri == uri
     existing.branch = branch unless existing.branch == branch
     existing.commit_hash = commit unless existing.commit_hash == commit
+    existing.save!
     existing
   else
     PlaceOS::Model::Generator.repository(type: :interface).tap do |repository|
@@ -77,6 +78,6 @@ def example_repository(
       repository.folder_name = folder_name
       repository.commit_hash = commit
       repository.branch = branch
-    end
+    end.save!
   end
 end
