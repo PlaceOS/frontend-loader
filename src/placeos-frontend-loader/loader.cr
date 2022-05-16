@@ -116,7 +116,7 @@ module PlaceOS::FrontendLoader
       case action
       in Action::Created, Action::Updated
         # Skip load if the only change was `deployed_commit_hash`
-        if (changes = repository.changed_attributes).size == 1 && changes[:deployed_commit_hash]?
+        if (changes = repository.changed_attributes).size == 1 && changes[:deployed_commit_hash]? && !repository.deployed_commit_hash.nil?
           return Resource::Result::Success
         end
 
