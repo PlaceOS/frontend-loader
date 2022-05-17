@@ -1,7 +1,5 @@
 require "option_parser"
-
 require "./constants"
-require "connect-proxy/ext/http-client"
 
 # Server defaults
 host = PlaceOS::FrontendLoader::HOST
