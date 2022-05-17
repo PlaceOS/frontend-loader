@@ -1,4 +1,8 @@
-## Unreleased
+## v2.5.0 (2022-05-17)
+
+### Feat
+
+- add support for dev.azure repositories
 
 ## v2.4.1 (2022-05-16)
 
