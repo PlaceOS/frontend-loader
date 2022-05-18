@@ -37,7 +37,7 @@ OptionParser.parse(ARGV.dup) do |parser|
   parser.on("-c URL", "--curl=URL", "Perform a basic health check by requesting the URL") do |url|
     begin
       uri = URI.parse(url)
-      client = HTTP::Client.new(uri, ignore_env: true)
+      client = HTTP::Client.new(uri)
       response = client.get uri.to_s
       exit 0 if (200..499).includes? response.status_code
       puts "health check failed, received response code #{response.status_code}"
