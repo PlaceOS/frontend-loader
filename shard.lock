@@ -111,11 +111,11 @@ shards:
 
   opentelemetry-api:
     git: https://github.com/wyhaines/opentelemetry-api.cr.git
-    version: 0.2.4
+    version: 0.2.5
 
   opentelemetry-instrumentation:
     git: https://github.com/wyhaines/opentelemetry-instrumentation.cr.git
-    version: 0.3.0+git.commit.c135b4a750beee73b45d8fdba77a259f30788cb4
+    version: 0.3.1+git.commit.d4bd9afb7c28616b081b05978d836fd1c873ab75
 
   pars: # Overridden
     git: https://github.com/spider-gazelle/pars.git
