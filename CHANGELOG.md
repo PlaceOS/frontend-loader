@@ -1,3 +1,9 @@
+## v2.5.1 (2022-05-18)
+
+### Fix
+
+- **app**: removal of connect-proxy ext broke compilation
+
 ## v2.5.0 (2022-05-17)
 
 ### Feat
