@@ -26,6 +26,8 @@ services:
       - ${PWD}/shard.yml:/app/shard.yml
     depends_on:
       - rethink
+    security_opt:
+      - seccomp:unconfined
     environment:
       # Environment
       GITHUB_ACTION: ${GITHUB_ACTION-}
