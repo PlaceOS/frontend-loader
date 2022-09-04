@@ -1,5 +1,5 @@
 module PlaceOS::FrontendLoader
-  APP_NAME     = "frontend-loader"
+  APP_NAME = "frontend-loader"
   {% begin %}
     VERSION = {{ `shards version "#{__DIR__}"`.chomp.stringify.downcase }}
   {% end %}

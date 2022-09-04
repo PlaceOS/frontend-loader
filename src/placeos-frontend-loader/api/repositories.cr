@@ -60,7 +60,6 @@ module PlaceOS::FrontendLoader::Api
     ) : Array(GitRepository::Commit)
       repo = repo_cache
       branch = branch || repo.default_branch
-      depth = (params["depth"]? || 50).to_i
 
       Log.context.set(branch: branch, depth: depth, folder: folder_name)
       repo.commits(branch, depth: depth)
