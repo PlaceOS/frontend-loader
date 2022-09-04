@@ -2,8 +2,9 @@ require "placeos-log-backend"
 require "file_utils"
 require "placeos-models/spec/generator"
 require "../src/placeos-frontend-loader"
-require "../lib/action-controller/spec/curl_context"
-require "action-controller/server"
+
+# Helper methods for testing controllers (curl, with_server, context)
+require "action-controller/spec_helper"
 
 require "spec"
 

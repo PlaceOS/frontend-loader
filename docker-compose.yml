@@ -14,7 +14,7 @@ x-rethinkdb-client-env: &rethinkdb-client-env
 
 services:
   test: # Frontends
-    image: placeos/service-spec-runner:${CRYSTAL_VERSION:-latest}
+    image: placeos/service-spec-runner:${CRYSTAL_VERSION:-1.5.0}
     volumes:
       - ${PWD}/src:/app/src
       - ${PWD}/spec:/app/spec

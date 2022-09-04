@@ -1,8 +1,6 @@
 name: placeos-frontend-loader
 version: 2.5.1
 
-crystal: ">= 1.1.1"
-license: MIT
 authors:
   - Caspian Baska <caspian@place.tech>
   - Tassja Kriek <tassja@place.tech>
@@ -14,7 +12,7 @@ targets:
 dependencies:
   action-controller:
     github: spider-gazelle/action-controller
-    version: ~> 4.4
+    version: ~> 5.3
 
   git-repository:
       github: place-labs/git-repository

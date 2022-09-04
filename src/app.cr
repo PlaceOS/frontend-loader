@@ -48,6 +48,15 @@ OptionParser.parse(ARGV.dup) do |parser|
     end
   end
 
+  parser.on("-d", "--docs", "Outputs OpenAPI documentation for this service") do
+    puts ActionController::OpenAPI.generate_open_api_docs(
+      title: PlaceOS::FrontendLoader::APP_NAME,
+      version: PlaceOS::FrontendLoader::VERSION,
+      description: "Provides repository commit details and downloads frontend repository code"
+    ).to_yaml
+    exit 0
+  end
+
   parser.invalid_option do |flag|
     STDERR.puts "ERROR: #{flag} unrecognised"
     puts parser
