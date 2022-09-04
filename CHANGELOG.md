@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Feat
+
+- add support for ARM64 images ([#72](https://github.com/PlaceOS/frontend-loader/pull/72))
+
 ### Fix
 
 - **app**: removal of connect-proxy ext broke compilation
@@ -117,11 +121,6 @@
 
 ## v1.3.1 (2022-01-28)
 
-### Refactor
-
-- use `startup_finished?` from placeos-resource
-- mount under frontend-loader
-
 ### Feat
 
 - **loader**: expose a service startup status
@@ -133,6 +132,11 @@
 - **api:repositories**: strip url-unsafe chars from the remote digest
 - use correct repo uri
 - healthcheck URI
+
+### Refactor
+
+- use `startup_finished?` from placeos-resource
+- mount under frontend-loader
 
 ## v1.1.1 (2021-09-03)
 
@@ -157,7 +161,6 @@
 ### Feat
 
 - conform to PlaceOS::Model::Version
-- conform to PlaceOS::Model::Version
 - **logging**: configure progname
 - **logging**: use placeos-log-backend
 - support git user/pass
@@ -175,10 +178,6 @@
 - **controller:repositories**: reduce iterations
 
 ## v0.10.8 (2020-12-03)
-
-### Fix
-
-- correct flow for pulling a new branch
 
 ## v0.10.6 (2020-08-31)
 
@@ -204,14 +203,14 @@
 
 ## v0.10.1 (2020-07-09)
 
-### Fix
-
-- **client**: typo
-
 ### Feat
 
 - **controller:repositories**: support branch listing via API
 - **loader**: support branches
+
+### Fix
+
+- **client**: typo
 
 ## v0.9.0 (2020-07-07)
 
@@ -255,10 +254,6 @@
 
 ## v0.6.1 (2020-06-05)
 
-### Fix
-
-- **loader**: allow repository model to control backoffice
-
 ## v0.6.0 (2020-06-02)
 
 ### Fix
@@ -277,13 +272,13 @@
 
 ## v0.4.0 (2020-05-09)
 
-### Fix
-
-- **controller:repositories**: reject non-git dirs in repository listing
-
 ### Feat
 
 - **loader**: implicitly clone backoffice
+
+### Fix
+
+- **controller:repositories**: reject non-git dirs in repository listing
 
 ## v0.3.0 (2020-05-04)
 
