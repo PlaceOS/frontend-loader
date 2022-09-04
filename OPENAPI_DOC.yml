@@ -1,0 +1,727 @@
+---
+openapi: 3.0.3
+info:
+  description: Provides repository commit details and downloads frontend repository
+    code
+  title: frontend-loader
+  version: 2.5.1
+paths:
+  /api/frontend-loader/v1/remotes/{repository_url}/releases:
+    get:
+      summary: Returns an array of releases for a repository
+      tags:
+      - Remotes
+      operationId: PlaceOS::FrontendLoader::Api::Remotes#releases
+      parameters:
+      - name: repository_url
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/String'
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__CommonError'
+        503:
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__CommonError'
+        406:
+          description: Not Acceptable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ContentError'
+        415:
+          description: Unsupported Media Type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ContentError'
+        422:
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ParameterError'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ParameterError'
+  /api/frontend-loader/v1/remotes/{repository_url}/commits:
+    get:
+      summary: Returns an array of commits for a repository
+      tags:
+      - Remotes
+      operationId: PlaceOS::FrontendLoader::Api::Remotes#commits
+      parameters:
+      - name: repository_url
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: branch
+        in: query
+        description: the branch to grab commits from
+        example: main
+        required: false
+        schema:
+          type: string
+          nullable: true
+      - name: depth
+        in: query
+        description: the number of commits to return
+        example: "50"
+        required: false
+        schema:
+          type: integer
+          format: Int32
+      - name: file
+        in: query
+        description: the file we want to grab commits from
+        example: src/place/meet.cr
+        required: false
+        schema:
+          type: string
+          nullable: true
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GitRepository__Commit'
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__CommonError'
+        503:
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__CommonError'
+        406:
+          description: Not Acceptable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ContentError'
+        415:
+          description: Unsupported Media Type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ContentError'
+        422:
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ParameterError'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ParameterError'
+  /api/frontend-loader/v1/remotes/{repository_url}/branches:
+    get:
+      summary: Returns an array of branches
+      tags:
+      - Remotes
+      operationId: PlaceOS::FrontendLoader::Api::Remotes#branches
+      parameters:
+      - name: repository_url
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/String'
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__CommonError'
+        503:
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__CommonError'
+        406:
+          description: Not Acceptable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ContentError'
+        415:
+          description: Unsupported Media Type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ContentError'
+        422:
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ParameterError'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ParameterError'
+  /api/frontend-loader/v1/remotes/{repository_url}/tags:
+    get:
+      summary: Returns an array of tags
+      tags:
+      - Remotes
+      operationId: PlaceOS::FrontendLoader::Api::Remotes#tags
+      parameters:
+      - name: repository_url
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/String'
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__CommonError'
+        503:
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__CommonError'
+        406:
+          description: Not Acceptable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ContentError'
+        415:
+          description: Unsupported Media Type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ContentError'
+        422:
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ParameterError'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ParameterError'
+  /api/frontend-loader/v1/repositories/{folder_name}/commits:
+    get:
+      summary: Returns an array of commits for a repository
+      tags:
+      - Repositories
+      operationId: PlaceOS::FrontendLoader::Api::Repositories#commits
+      parameters:
+      - name: folder_name
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: branch
+        in: query
+        description: the branch to grab commits from
+        example: main
+        required: false
+        schema:
+          type: string
+          nullable: true
+      - name: depth
+        in: query
+        description: the number of commits to return
+        example: "50"
+        required: false
+        schema:
+          type: integer
+          format: Int32
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GitRepository__Commit'
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__CommonError'
+        503:
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__CommonError'
+        406:
+          description: Not Acceptable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ContentError'
+        415:
+          description: Unsupported Media Type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ContentError'
+        422:
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ParameterError'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ParameterError'
+  /api/frontend-loader/v1/repositories/{folder_name}/branches:
+    get:
+      summary: Returns an array of branches for a repository
+      tags:
+      - Repositories
+      operationId: PlaceOS::FrontendLoader::Api::Repositories#branches
+      parameters:
+      - name: folder_name
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/String'
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__CommonError'
+        503:
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__CommonError'
+        406:
+          description: Not Acceptable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ContentError'
+        415:
+          description: Unsupported Media Type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ContentError'
+        422:
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ParameterError'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ParameterError'
+  /api/frontend-loader/v1/repositories/{folder_name}/releases:
+    get:
+      summary: Returns an array of releases for a repository
+      tags:
+      - Repositories
+      operationId: PlaceOS::FrontendLoader::Api::Repositories#releases
+      parameters:
+      - name: folder_name
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: count
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: Int32
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/String'
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__CommonError'
+        503:
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__CommonError'
+        406:
+          description: Not Acceptable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ContentError'
+        415:
+          description: Unsupported Media Type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ContentError'
+        422:
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ParameterError'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ParameterError'
+  /api/frontend-loader/v1/repositories:
+    get:
+      summary: Returns a hash of folder name to commits
+      tags:
+      - Repositories
+      operationId: PlaceOS::FrontendLoader::Api::Repositories#loaded
+      parameters: []
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Hash_String__String_'
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__CommonError'
+        503:
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__CommonError'
+        406:
+          description: Not Acceptable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ContentError'
+        415:
+          description: Unsupported Media Type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ContentError'
+        422:
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ParameterError'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ParameterError'
+  /api/frontend-loader/v1:
+    get:
+      summary: health check, is the service responsive
+      tags:
+      - Root
+      operationId: PlaceOS::FrontendLoader::Api::Root#root
+      parameters: []
+      responses:
+        200:
+          description: OK
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__CommonError'
+        503:
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__CommonError'
+        406:
+          description: Not Acceptable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ContentError'
+        415:
+          description: Unsupported Media Type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ContentError'
+        422:
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ParameterError'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ParameterError'
+  /api/frontend-loader/v1/startup:
+    get:
+      summary: has the service finished initializing
+      tags:
+      - Root
+      operationId: PlaceOS::FrontendLoader::Api::Root#startup
+      parameters: []
+      responses:
+        200:
+          description: OK
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__CommonError'
+        503:
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__CommonError'
+        406:
+          description: Not Acceptable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ContentError'
+        415:
+          description: Unsupported Media Type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ContentError'
+        422:
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ParameterError'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ParameterError'
+  /api/frontend-loader/v1/version:
+    get:
+      summary: return the service build details
+      tags:
+      - Root
+      operationId: PlaceOS::FrontendLoader::Api::Root#version
+      parameters: []
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__Model__Version'
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__CommonError'
+        503:
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__CommonError'
+        406:
+          description: Not Acceptable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ContentError'
+        415:
+          description: Unsupported Media Type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ContentError'
+        422:
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ParameterError'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOS__FrontendLoader__Api__Base__ParameterError'
+components:
+  schemas:
+    String:
+      type: string
+    GitRepository__Commit:
+      type: object
+      properties:
+        hash:
+          type: string
+        subject:
+          type: string
+        author:
+          type: string
+          nullable: true
+        date:
+          type: string
+          nullable: true
+        commit:
+          type: string
+      required:
+      - hash
+      - subject
+      - commit
+    Hash_String__String_:
+      type: object
+      additionalProperties:
+        type: string
+    PlaceOS__Model__Version:
+      type: object
+      properties:
+        service:
+          type: string
+        commit:
+          type: string
+        version:
+          type: string
+        build_time:
+          type: string
+        platform_version:
+          type: string
+      required:
+      - service
+      - commit
+      - version
+      - build_time
+      - platform_version
+    PlaceOS__FrontendLoader__Api__Base__CommonError:
+      type: object
+      properties:
+        error:
+          type: string
+          nullable: true
+        backtrace:
+          type: array
+          items:
+            type: string
+          nullable: true
+    PlaceOS__FrontendLoader__Api__Base__ContentError:
+      type: object
+      properties:
+        error:
+          type: string
+        accepts:
+          type: array
+          items:
+            type: string
+          nullable: true
+      required:
+      - error
+    PlaceOS__FrontendLoader__Api__Base__ParameterError:
+      type: object
+      properties:
+        error:
+          type: string
+        parameter:
+          type: string
+          nullable: true
+        restriction:
+          type: string
+          nullable: true
+      required:
+      - error

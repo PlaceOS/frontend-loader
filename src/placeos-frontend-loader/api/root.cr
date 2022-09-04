@@ -6,20 +6,23 @@ module PlaceOS::FrontendLoader::Api
   class Root < Base
     base "/api/frontend-loader/v1"
 
-    get "/", :root do
-      head :ok
+    # health check, is the service responsive
+    @[AC::Route::GET("/")]
+    def root : Nil
     end
 
-    get "/startup", :startup do
-      if PlaceOS::FrontendLoader::Loader.instance.startup_finished?
-        head :ok
-      else
-        head :service_unavailable
+    # has the service finished initializing
+    @[AC::Route::GET("/startup")]
+    def startup : Nil
+      unless PlaceOS::FrontendLoader::Loader.instance.startup_finished?
+        raise Error::ServiceUnavailable.new("frontends has not finished loading repositories")
       end
     end
 
-    get "/version", :version do
-      render :ok, json: PlaceOS::Model::Version.new(
+    # return the service build details
+    @[AC::Route::GET("/version")]
+    def version : PlaceOS::Model::Version
+      PlaceOS::Model::Version.new(
         version: VERSION,
         build_time: BUILD_TIME,
         commit: BUILD_COMMIT,
