@@ -61,7 +61,7 @@ RUN for binary in /app/bin/*; do \
 # Build a minimal docker image
 FROM alpine:3.16
 WORKDIR /app
-ENV PATH=$PATH:/app/bin
+ENV PATH=$PATH:/
 
 RUN apk add --update --no-cache \
     'apk-tools>=2.10.8-r0' \
@@ -75,28 +75,12 @@ RUN apk add --update --no-cache \
 RUN update-ca-certificates
 
 # Copy the app into place
-COPY --from=build /app/deps /app/bin
-COPY --from=build /app/bin /app/bin
-
-# Create a non-privileged user, defaults are appuser:10001
-ARG IMAGE_UID="10001"
-ENV UID=$IMAGE_UID
-ENV USER=appuser
-
-# See https://stackoverflow.com/a/55757473/12429735
-RUN adduser \
-    --disabled-password \
-    --gecos "" \
-    --home "/nonexistent" \
-    --shell "/sbin/nologin" \
-    --no-create-home \
-    --uid "${UID}" \
-    "${USER}"
-
-USER appuser:appuser
+COPY --from=build /app/deps /
+COPY --from=build /app/bin /
+RUN mkdir -p /app/www
 
 # Run the app binding on port 3000
 EXPOSE 3000
-ENTRYPOINT ["/app/bin/frontends"]
-HEALTHCHECK CMD ["/app/bin/frontends", "-c", "http://localhost:3000/api/frontend-loader/v1"]
-CMD ["/app/bin/frontends", "-b", "0.0.0.0", "-p", "3000"]
+ENTRYPOINT ["/frontends"]
+HEALTHCHECK CMD ["/frontends", "-c", "http://localhost:3000/api/frontend-loader/v1"]
+CMD ["/frontends", "-b", "0.0.0.0", "-p", "3000"]
