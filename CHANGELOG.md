@@ -6,6 +6,7 @@
 
 ### Fix
 
+- **Dockerfile**: app dependencies and fs permissions
 - **Dockerfile**: revert static build ([#73](https://github.com/PlaceOS/frontend-loader/pull/73))
 - **app**: removal of connect-proxy ext broke compilation
 
