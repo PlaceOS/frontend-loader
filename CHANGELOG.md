@@ -2,6 +2,7 @@
 
 ### Feat
 
+- **api/remotes**: allow querying protected remotes ([#74](https://github.com/PlaceOS/frontend-loader/pull/74))
 - add support for ARM64 images ([#72](https://github.com/PlaceOS/frontend-loader/pull/72))
 
 ### Fix
