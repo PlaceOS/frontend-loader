@@ -15,9 +15,27 @@ paths:
       parameters:
       - name: repository_url
         in: path
+        description: the git url that represents the repository
+        example: https://github.com/PlaceOS/PlaceOS.git
         required: true
         schema:
           type: string
+      - name: username
+        in: query
+        description: a username for access if required
+        example: steve
+        required: false
+        schema:
+          type: string
+          nullable: true
+      - name: password
+        in: query
+        description: the password or access token as required
+        example: ab34cfe4567
+        required: false
+        schema:
+          type: string
+          nullable: true
       responses:
         200:
           description: OK
@@ -72,6 +90,8 @@ paths:
       parameters:
       - name: repository_url
         in: path
+        description: the git url that represents the repository
+        example: https://github.com/PlaceOS/PlaceOS.git
         required: true
         schema:
           type: string
@@ -95,6 +115,22 @@ paths:
         in: query
         description: the file we want to grab commits from
         example: src/place/meet.cr
+        required: false
+        schema:
+          type: string
+          nullable: true
+      - name: username
+        in: query
+        description: a username for access if required
+        example: steve
+        required: false
+        schema:
+          type: string
+          nullable: true
+      - name: password
+        in: query
+        description: the password or access token as required
+        example: ab34cfe4567
         required: false
         schema:
           type: string
@@ -153,9 +189,27 @@ paths:
       parameters:
       - name: repository_url
         in: path
+        description: the git url that represents the repository
+        example: https://github.com/PlaceOS/PlaceOS.git
         required: true
         schema:
           type: string
+      - name: username
+        in: query
+        description: a username for access if required
+        example: steve
+        required: false
+        schema:
+          type: string
+          nullable: true
+      - name: password
+        in: query
+        description: the password or access token as required
+        example: ab34cfe4567
+        required: false
+        schema:
+          type: string
+          nullable: true
       responses:
         200:
           description: OK
@@ -210,9 +264,27 @@ paths:
       parameters:
       - name: repository_url
         in: path
+        description: the git url that represents the repository
+        example: https://github.com/PlaceOS/PlaceOS.git
         required: true
         schema:
           type: string
+      - name: username
+        in: query
+        description: a username for access if required
+        example: steve
+        required: false
+        schema:
+          type: string
+          nullable: true
+      - name: password
+        in: query
+        description: the password or access token as required
+        example: ab34cfe4567
+        required: false
+        schema:
+          type: string
+          nullable: true
       responses:
         200:
           description: OK
