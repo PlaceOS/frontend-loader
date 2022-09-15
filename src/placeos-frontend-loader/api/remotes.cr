@@ -13,7 +13,7 @@ module PlaceOS::FrontendLoader::Api
       @[AC::Param::Info(description: "a username for access if required", example: "steve")]
       username : String? = nil,
       @[AC::Param::Info(description: "the password or access token as required", example: "ab34cfe4567")]
-      password : String? = nil,
+      password : String? = nil
     )
       @repository_url = repository_url
     end
