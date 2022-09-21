@@ -9,13 +9,12 @@ module PlaceOS::FrontendLoader::Api
     @[AC::Route::Filter(:before_action)]
     protected def get_repository_url(
       @[AC::Param::Info(description: "the git url that represents the repository", example: "https://github.com/PlaceOS/PlaceOS.git")]
-      repository_url : String,
+      @repository_url : String,
       @[AC::Param::Info(description: "a username for access if required", example: "steve")]
-      username : String? = nil,
+      @username : String? = nil,
       @[AC::Param::Info(description: "the password or access token as required", example: "ab34cfe4567")]
-      password : String? = nil
+      @password : String? = nil
     )
-      @repository_url = repository_url
     end
 
     getter! repository_url : String
