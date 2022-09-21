@@ -66,35 +66,47 @@ module PlaceOS::FrontendLoader
     end
 
     # Releases for a remote repository
-    def releases(repository_url : String)
+    def releases(repository_url : String, username : String? = nil, password : String? = nil)
       encoded_url = URI.encode_www_form(repository_url)
-      path = "/remotes/#{encoded_url}/releases"
-      response = get(path)
+      params = URI::Params.build do |form|
+        form.add("username", username.to_s) if username.presence
+        form.add("password", password.to_s) if password.presence
+      end
+      response = get("/remotes/#{encoded_url}/releases?#{params}")
       Array(String).from_json(response.body)
     end
 
     # Commits for a remote repository
-    def remote_commits(repository_url : String, branch : String)
+    def remote_commits(repository_url : String, branch : String, username : String? = nil, password : String? = nil)
       encoded_url = URI.encode_www_form(repository_url)
-      params = HTTP::Params{"branch" => branch}
-      path = "/remotes/#{encoded_url}/commits?#{params}"
-      response = get(path)
+      params = URI::Params.build do |form|
+        form.add("branch", branch)
+        form.add("username", username.to_s) if username.presence
+        form.add("password", password.to_s) if password.presence
+      end
+      response = get("/remotes/#{encoded_url}/commits?#{params}")
       Array(GitRepository::Commit).from_json(response.body)
     end
 
     # Branches for a remote repository
-    def remote_branches(repository_url : String)
+    def remote_branches(repository_url : String, username : String? = nil, password : String? = nil)
       encoded_url = URI.encode_www_form(repository_url)
-      path = "/remotes/#{encoded_url}/branches"
-      response = get(path)
+      params = URI::Params.build do |form|
+        form.add("username", username.to_s) if username.presence
+        form.add("password", password.to_s) if password.presence
+      end
+      response = get("/remotes/#{encoded_url}/branches?#{params}")
       Array(String).from_json(response.body)
     end
 
     # Tags for a remote repository
-    def tags(repository_url : String)
+    def tags(repository_url : String, username : String? = nil, password : String? = nil)
       encoded_url = URI.encode_www_form(repository_url)
-      path = "/remotes/#{encoded_url}/tags"
-      response = get(path)
+      params = URI::Params.build do |form|
+        form.add("username", username.to_s) if username.presence
+        form.add("password", password.to_s) if password.presence
+      end
+      response = get("/remotes/#{encoded_url}/tags?#{params}")
       Array(String).from_json(response.body)
     end
 

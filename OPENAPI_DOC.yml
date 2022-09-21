@@ -4,7 +4,7 @@ info:
   description: Provides repository commit details and downloads frontend repository
     code
   title: frontend-loader
-  version: 2.5.1
+  version: 2.5.2
 paths:
   /api/frontend-loader/v1/remotes/{repository_url}/releases:
     get:
