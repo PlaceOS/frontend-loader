@@ -1,5 +1,11 @@
 ## Unreleased
 
+### Fix
+
+- querying generic git repos with auth ([#75](https://github.com/PlaceOS/frontend-loader/pull/75))
+
+## v2.5.1 (2022-09-15)
+
 ### Feat
 
 - **api/remotes**: allow querying protected remotes ([#74](https://github.com/PlaceOS/frontend-loader/pull/74))
