@@ -77,10 +77,19 @@ module PlaceOS::FrontendLoader
     end
 
     # Commits for a remote repository
-    def remote_commits(repository_url : String, branch : String, username : String? = nil, password : String? = nil)
+    def remote_commits(
+      repository_url : String,
+      branch : String? = nil,
+      file : String? = nil,
+      depth : Int32? = nil,
+      username : String? = nil,
+      password : String? = nil
+    )
       encoded_url = URI.encode_www_form(repository_url)
       params = URI::Params.build do |form|
-        form.add("branch", branch)
+        form.add("file", file.to_s) if file.presence
+        form.add("depth", depth.to_s) if depth
+        form.add("branch", branch.to_s) if branch.presence
         form.add("username", username.to_s) if username.presence
         form.add("password", password.to_s) if password.presence
       end
