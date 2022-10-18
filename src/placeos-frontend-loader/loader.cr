@@ -205,6 +205,9 @@ module PlaceOS::FrontendLoader
           FileUtils.rm_rf(old_folder_name)
         end
 
+        # remove the `.git` folder as it's not required
+        FileUtils.rm_rf(File.join(repository_directory, ".git"))
+
         Log.info { {
           message:           "updated frontend repository",
           commit:            commit.hash,

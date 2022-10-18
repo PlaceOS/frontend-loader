@@ -70,6 +70,7 @@ module PlaceOS::FrontendLoader
 
       successfully_created = loader.process_resource(:created, repository).success?
       repo_exists = Dir.exists?(expected_path)
+      git_exists = Dir.exists?(File.join(expected_path, ".git"))
 
       successfully_deleted = loader.process_resource(:deleted, repository).success?
       repo_does_not_exist = !Dir.exists?(expected_path)
@@ -77,6 +78,10 @@ module PlaceOS::FrontendLoader
       it "loads frontends" do
         successfully_created.should be_true
         repo_exists.should be_true
+      end
+
+      it "removes the git folder" do
+        git_exists.should be_false
       end
 
       it "removes frontends" do
