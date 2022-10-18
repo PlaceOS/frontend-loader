@@ -1,4 +1,12 @@
-## Unreleased
+## v2.6.0 (2022-10-18)
+
+### Feat
+
+- **loader**: remove git folder once downloaded ([#77](https://github.com/PlaceOS/frontend-loader/pull/77))
+
+## v2.5.3 (2022-09-22)
+
+## v2.5.2 (2022-09-21)
 
 ### Fix
 
