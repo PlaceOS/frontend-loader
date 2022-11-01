@@ -15,6 +15,7 @@ RUN shards install --production --ignore-crystal-version --skip-postinstall --sk
 
 # Add src
 COPY ./src /app/src
+RUN mkdir -p /app/www
 
 # Build application
 RUN PLACE_COMMIT=$PLACE_COMMIT \
@@ -54,7 +55,7 @@ COPY --from=build /usr/libexec/git-core/ /usr/libexec/git-core/
 # Copy the app into place
 COPY --from=build /app/deps /
 COPY --from=build /app/bin /
-RUN mkdir -p /app/www
+COPY --from=build /app/www /app/www
 
 # Run the app binding on port 3000
 EXPOSE 3000
