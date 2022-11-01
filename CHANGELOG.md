@@ -1,3 +1,9 @@
+## v2.7.0 (2022-11-01)
+
+### Feat
+
+- **Dockerfile**: build a minimal image ([#79](https://github.com/PlaceOS/frontend-loader/pull/79))
+
 ## v2.6.0 (2022-10-18)
 
 ### Feat
