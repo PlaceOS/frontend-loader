@@ -37,7 +37,7 @@ RUN for binary in "/usr/bin/git" /app/bin/* /usr/libexec/git-core/*; do \
 
 # Build a minimal docker image
 FROM scratch
-WORKDIR /
+WORKDIR /app
 ENV PATH=$PATH:/
 
 # These are required for communicating with external services
