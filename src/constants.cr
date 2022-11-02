@@ -15,7 +15,7 @@ module PlaceOS::FrontendLoader
   PORT = (ENV["PLACE_LOADER_PORT"]? || 3000).to_i
 
   # settings for `./placeos-frontend-loader/loader.cr`
-  WWW      = ENV["PLACE_LOADER_WWW"]? || "/app/www"
+  WWW      = ENV["PLACE_LOADER_WWW"]? || "www"
   CRON     = ENV["PLACE_LOADER_CRON"]? || "0 * * * *"
   GIT_USER = ENV["PLACE_LOADER_GIT_USER"]? || ""
   GIT_PASS = ENV["PLACE_LOADER_GIT_PASS"]? || ""
