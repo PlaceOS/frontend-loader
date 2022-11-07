@@ -8,6 +8,21 @@ ARG PLACE_COMMIT="DEV"
 # Set the platform version via a build arg
 ARG PLACE_VERSION="DEV"
 
+# Create a non-privileged user, defaults are appuser:10001
+ARG IMAGE_UID="10001"
+ENV UID=$IMAGE_UID
+ENV USER=appuser
+
+# See https://stackoverflow.com/a/55757473/12429735
+RUN adduser \
+    --disabled-password \
+    --gecos "" \
+    --home "/nonexistent" \
+    --shell "/sbin/nologin" \
+    --no-create-home \
+    --uid "${UID}" \
+    "${USER}"
+
 # Install shards for caching
 COPY shard.yml .
 COPY shard.override.yml .
@@ -40,6 +55,10 @@ FROM scratch
 WORKDIR /app
 ENV PATH=$PATH:/
 
+# Copy the user information over
+COPY --from=build etc/passwd /etc/passwd
+COPY --from=build /etc/group /etc/group
+
 # These are required for communicating with external services
 COPY --from=build /etc/hosts /etc/hosts
 
@@ -58,8 +77,11 @@ COPY --from=build /usr/libexec/git-core/ /usr/libexec/git-core/
 # Copy the app into place
 COPY --from=build /app/deps /
 COPY --from=build /app/bin /
-COPY --from=build /app/www /app/www
-COPY --from=build /app/tmp /tmp
+COPY --from=build --chown=10001:10001 /app/www /app/www
+COPY --from=build --chown=10001:10001 /app/tmp /tmp
+
+# Use an unprivileged user.
+USER appuser:appuser
 
 # Run the app binding on port 3000
 EXPOSE 3000
