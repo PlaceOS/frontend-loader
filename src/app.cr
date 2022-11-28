@@ -71,6 +71,14 @@ end
 
 require "./config"
 
+# Configure the database connection. First check if PG_DATABASE_URL environment variable
+# is set. If not, assume database configuration are set via individual environment variables
+if pg_url = ENV["PG_DATABASE_URL"]?
+  PgORM::Database.parse(pg_url)
+else
+  PgORM::Database.configure { |_| }
+end
+
 # Configure the loader
 
 PlaceOS::FrontendLoader::Loader.configure do |settings|
