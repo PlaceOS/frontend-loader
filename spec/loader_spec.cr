@@ -42,12 +42,15 @@ module PlaceOS::FrontendLoader
         repository.password = old_token
         repository.save!
 
-        changes = [] of RethinkORM::Changefeed::Change(PlaceOS::Model::Repository)
+        changes = [] of PlaceOS::Model::Repository::ChangeFeed::Change(PlaceOS::Model::Repository)
+        changefeed = Model::Repository.changes
         spawn do
-          Model::Repository.changes.each do |change|
+          changefeed.each do |change|
             changes << change
           end
         end
+
+        sleep 1
 
         loader = Loader.new
 
@@ -60,7 +63,7 @@ module PlaceOS::FrontendLoader
         repository = repository.class.find!(repository.id.not_nil!)
         loader.process_resource(:updated, repository).success?.should be_true
 
-        sleep 10.seconds
+        changefeed.stop
         changes.size.should eq 2
       end
     end
@@ -104,7 +107,7 @@ module PlaceOS::FrontendLoader
       loader.process_resource(:updated, repository).success?.should be_true
 
       Dir.exists?(expected_path).should be_true
-      File.exists?("/app/test-www/test-repo/README.md").should be_true
+      File.exists?("#{TEST_DIR}/test-repo/README.md").should be_true
     end
 
     describe "branches" do

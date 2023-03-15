@@ -36,9 +36,8 @@ module PlaceOS::FrontendLoader::Api
       return if @repo_cache
 
       # attempt to find the record in the database
-      repo_details = ::PlaceOS::Model::Repository.collection_query do |table|
-        table.get_all(folder_name, index: :folder_name)
-      end.to_a.select!(&.repo_type.interface?).first?
+      repo_details = ::PlaceOS::Model::Repository.where(folder_name: folder_name)
+        .to_a.select!(&.repo_type.interface?).first?
 
       raise Error::NotFound.new("unable to find repository at #{folder_name}") unless repo_details
       @repo_cache = GitRepository.new(repo_details.uri, repo_details.username, repo_details.decrypt_password)

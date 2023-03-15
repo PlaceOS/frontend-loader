@@ -1,6 +1,6 @@
 require "file_utils"
 require "habitat"
-require "placeos-models/repository"
+require "placeos-models"
 require "placeos-resource"
 require "tasker"
 
