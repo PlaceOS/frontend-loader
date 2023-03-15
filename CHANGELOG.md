@@ -1,3 +1,9 @@
+## v2.7.1 (2023-03-15)
+
+### Refactor
+
+- migrate to postgres ([#82](https://github.com/PlaceOS/frontend-loader/pull/82))
+
 ## v2.7.0 (2022-11-01)
 
 ### Feat
