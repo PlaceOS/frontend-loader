@@ -7,7 +7,7 @@ shards:
 
   action-controller:
     git: https://github.com/spider-gazelle/action-controller.git
-    version: 5.4.3
+    version: 5.5.3
 
   active-model:
     git: https://github.com/spider-gazelle/active-model.git
@@ -127,7 +127,7 @@ shards:
 
   openssl_ext:
     git: https://github.com/spider-gazelle/openssl_ext.git
-    version: 2.2.0
+    version: 2.2.1
 
   opentelemetry-api:
     git: https://github.com/wyhaines/opentelemetry-api.cr.git
@@ -179,7 +179,7 @@ shards:
 
   protobuf:
     git: https://github.com/jeromegn/protobuf.cr.git
-    version: 2.2.3
+    version: 2.3.0
 
   raven:
     git: https://github.com/sija/raven.cr.git
