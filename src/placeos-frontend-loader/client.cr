@@ -22,7 +22,8 @@ module PlaceOS::FrontendLoader
     def self.client(
       uri : URI = DEFAULT_URI,
       request_id : String? = nil,
-      api_version : String = API_VERSION
+      api_version : String = API_VERSION,
+      &
     )
       client = new(uri, request_id, api_version)
       begin

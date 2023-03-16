@@ -143,13 +143,11 @@ module PlaceOS::FrontendLoader
         old_repo = loaded.repo
         old_folder_name = old_repo.folder_name
 
-        if (
-             old_folder_name == repository.folder_name &&
-             old_repo.branch == repository.branch &&
-             old_repo.username == repository.username &&
-             old_repo.password == repository.password &&
-             old_repo.uri == repository.uri
-           )
+        if old_folder_name == repository.folder_name &&
+           old_repo.branch == repository.branch &&
+           old_repo.username == repository.username &&
+           old_repo.password == repository.password &&
+           old_repo.uri == repository.uri
           Log.trace { "#{repository.folder_name}: no changes found" }
           {false, old_folder_name}
         else
