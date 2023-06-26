@@ -1,4 +1,10 @@
-## v2.7.1 (2023-03-15)
+## Unreleased
+
+### Feat
+
+- **shard.lock**: bump opentelemetry-instrumentation.cr
+
+## v3.0.0 (2023-03-15)
 
 ### Refactor
 
