@@ -65,6 +65,11 @@ module PlaceOS::FrontendLoader
 
         changefeed.stop
         changes.size.should eq 2
+
+        repository.reload!
+        encrypted = repository.password.not_nil!
+        encrypted.should_not eq new_token
+        encrypted.should start_with '\e'
       end
     end
 
