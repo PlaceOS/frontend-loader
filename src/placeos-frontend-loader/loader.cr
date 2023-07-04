@@ -73,10 +73,32 @@ module PlaceOS::FrontendLoader
           @www_repo.fetch_commit(latest_commit, temp_path)
 
           # 3. move the files into place (ignore hidden files)
-          FileUtils.mv(Dir.entries(temp_path).compact_map { |file|
-            next if file.starts_with?('.')
-            File.join(temp_path, file)
-          }, www_folder)
+          # FileUtils.mv(Dir.entries(temp_path).compact_map { |file|
+          #  next if file.starts_with?('.')
+          #  File.join(temp_path, file)
+          # }, www_folder)
+
+          # workaround for issue: https://github.com/crystal-lang/crystal/issues/13629
+          temp_path_start = File.join(temp_path, "/")
+          ignore_paths = ["."]
+          Dir.glob(File.join(temp_path, "**/*")).each do |original_file|
+            file = original_file.lchop(temp_path_start)
+            # ignore any dot files or files in dot directories
+            # shouldn't need to do this as glob is ignoring hidden folders and files
+            if ignore_paths.any? { |path| file.starts_with?(path) }
+              ignore_paths << file if File.directory?(original_file)
+              next
+            end
+
+            # ensure folders exist already
+            dest = File.join(www_folder, file)
+            if File.directory?(original_file)
+              Dir.mkdir_p dest
+              next
+            end
+
+            File.copy original_file, dest
+          end
 
           # 4. update the commit
           @www_commit = latest_commit
