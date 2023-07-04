@@ -4,6 +4,10 @@
 
 - **shard.lock**: bump opentelemetry-instrumentation.cr
 
+### Fix
+
+- **loader**: ensure sub directories are updated for www-core ([#83](https://github.com/PlaceOS/frontend-loader/pull/83))
+
 ## v3.0.0 (2023-03-15)
 
 ### Refactor
