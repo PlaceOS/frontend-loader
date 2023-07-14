@@ -6,6 +6,7 @@
 
 ### Fix
 
+- **resource**: replaced change feed iterator with async closure
 - **loader**: specify load timeout
 - **resource**: missing change events
 - **eventbus**: handle read replica race conditions
