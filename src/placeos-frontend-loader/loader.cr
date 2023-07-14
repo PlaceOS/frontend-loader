@@ -123,7 +123,7 @@ module PlaceOS::FrontendLoader
 
     # Pull all frontends
     protected def repeating_update
-      load_resources.tap do
+      load_resources(timeout: LOAD_TIMEOUT).tap do
         # Pull base PlaceOS WWW folder
         create_base_www
       end
