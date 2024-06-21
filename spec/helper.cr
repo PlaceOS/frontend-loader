@@ -10,31 +10,8 @@ require "spec"
 
 TEST_DIR = "/app/test-www"
 
+# Configure DB
 PgORM::Database.configure { |_| }
-PgORM::Database.connection do |db|
-  db.exec <<-SQL
-    DROP TABLE IF EXISTS "repo"
-  SQL
-
-  db.exec <<-SQL
-  CREATE TABLE IF NOT EXISTS "repo"(
-    created_at TIMESTAMPTZ NOT NULL,
-    updated_at TIMESTAMPTZ NOT NULL,
-    name TEXT NOT NULL,
-    description TEXT NOT NULL,
-    folder_name TEXT NOT NULL,
-    uri TEXT NOT NULL,
-    commit_hash TEXT NOT NULL,
-    branch TEXT NOT NULL,
-    deployed_commit_hash TEXT,
-    release BOOLEAN NOT NULL,
-    username TEXT,
-    password TEXT,
-    repo_type INTEGER NOT NULL,
-    id TEXT NOT NULL PRIMARY KEY
-  );
-  SQL
-end
 
 Spec.before_suite do
   Log.builder.bind "*", :info, PlaceOS::LogBackend.log_backend

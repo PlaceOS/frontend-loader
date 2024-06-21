@@ -5,7 +5,6 @@ version: "3.7"
 x-deployment-env: &deployment-env
   ENV: ${ENV:-development}
   SG_ENV: ${SG_ENV:-development}
-  TZ: $TZ
 
 x-postgresdb-client-env: &postgresdb-client-env
   PG_HOST: ${PG_HOST:-postgres}
@@ -28,16 +27,15 @@ services:
       - ${PWD}/shard.yml:/app/shard.yml.input
     depends_on:
       - postgres
+      - migrator
     environment:
       # Environment
       GITHUB_ACTION: ${GITHUB_ACTION-}
-      <<: *deployment-env
-      # Service Hosts
-      <<: *postgresdb-client-env
+      <<: [*deployment-env, *postgresdb-client-env]
 
   postgres:
     hostname: postgres
-    image: postgres
+    image: postgres:15-alpine
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 30s
@@ -47,8 +45,16 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
       POSTGRES_DB: place_development
-    healthcheck:
-      test: /usr/bin/pg_isready
-      interval: 5s
     ports:
       - 5432:5432
+
+  migrator:
+    build:
+      context: ${PWD}/spec/migration
+    container_name: migrator
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      GITHUB_ACTION: ${GITHUB_ACTION:-}
+      PG_DATABASE_URL: ${PG_DATABASE_URL:-postgresql://postgres:password@postgres:5432/place_development}

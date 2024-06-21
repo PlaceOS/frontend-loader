@@ -142,6 +142,11 @@ module PlaceOS::FrontendLoader
           return Resource::Result::Skipped
         end
 
+        # Skip load for error indicator update actions
+        if (changes = repository.changed_attributes) && (changes[:has_runtime_error]? || changes[:error_message]?)
+          return Resource::Result::Skipped
+        end
+
         # Load the repository
         Loader.load(
           repository: repository,
@@ -184,6 +189,7 @@ module PlaceOS::FrontendLoader
       end
     end
 
+    # ameba:disable Metrics/CyclomaticComplexity
     def self.load(
       repository : Model::Repository,
       content_directory : String
@@ -192,16 +198,26 @@ module PlaceOS::FrontendLoader
 
       # check for any relevant changes
       rebuild_cache, old_folder_name = check_for_changes(repository)
-
+      has_error = false
+      error_message = nil
       # rebuild caches
       cache = if rebuild_cache
-                GitRepository.new(repository.uri, repository.username, repository.decrypt_password, repository.branch)
+                begin
+                  GitRepository.new(repository.uri, repository.username, repository.decrypt_password, repository.branch)
+                rescue ex : Exception
+                  has_error = true
+                  error_message = ex.message
+                  Log.error(exception: ex) { {message: "Error loading repository", repository: repository.name, branch: repository.branch} }
+                  nil
+                end
               else
                 repo_cache = id_lookup[repository.id]
                 old_commit_hash = repo_cache.commit
                 repo_cache.cache
               end
 
+      Model::Repository.update(repository.id, {has_runtime_error: has_error, error_message: error_message}) if has_error || repository.has_runtime_error
+      return Resource::Result::Error unless cache
       # grab the required commit
       content_directory = File.expand_path(content_directory)
       repository_directory = File.join(content_directory, repository.folder_name)
