@@ -120,6 +120,29 @@ module PlaceOS::FrontendLoader
       Array(String).from_json(response.body)
     end
 
+    # List of drivers in a repository
+    def drivers(repository_url : String, branch : String? = nil, username : String? = nil, password : String? = nil)
+      encoded_url = URI.encode_www_form(repository_url)
+      params = URI::Params.build do |form|
+        form.add("username", username.to_s) if username.presence
+        form.add("password", password.to_s) if password.presence
+        form.add("branch", branch.to_s) if branch.presence
+      end
+      response = get("/remotes/#{encoded_url}/drivers?#{params}")
+      Array(String).from_json(response.body)
+    end
+
+    # Repository default branch
+    def default_branch(repository_url : String, username : String? = nil, password : String? = nil)
+      encoded_url = URI.encode_www_form(repository_url)
+      params = URI::Params.build do |form|
+        form.add("username", username.to_s) if username.presence
+        form.add("password", password.to_s) if password.presence
+      end
+      response = get("/remotes/#{encoded_url}/default_branch?#{params}")
+      response.body
+    end
+
     ###########################################################################
 
     def initialize(
