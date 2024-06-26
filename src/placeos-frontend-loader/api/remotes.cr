@@ -64,5 +64,25 @@ module PlaceOS::FrontendLoader::Api
       repo = GitRepository.new(repository_url, username, password)
       repo.tags.keys
     end
+
+    # lists the drivers in a repository
+    @[AC::Route::GET("/:repository_url/drivers")]
+    def drivers(
+      @[AC::Param::Info(description: "the branch to grab commits from", example: "main")]
+      branch : String? = nil
+    ) : Array(String)
+      repo = GitRepository.new(repository_url, username, password)
+      branch = branch || repo.default_branch
+      repo.file_list(ref: branch, path: "drivers/").select do |file|
+        file.ends_with?(".cr") && !file.ends_with?("_spec.cr") && !file.includes?("models")
+      end
+    end
+
+    # returns the default branch of the specified repository
+    @[AC::Route::GET("/:repository_url/default_branch")]
+    def default_branch : String
+      repo = GitRepository.new(repository_url, username, password)
+      repo.default_branch
+    end
   end
 end

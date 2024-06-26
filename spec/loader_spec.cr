@@ -38,10 +38,6 @@ module PlaceOS::FrontendLoader
         old_token = "fake_password"
         new_token = "fake_password_electric_boogaloo"
 
-        repository = example_repository(commit: "f7c6d8fb810c2be78722249e06bbfbda3d30d355")
-        repository.password = old_token
-        repository.save!
-
         changes = [] of PlaceOS::Model::Repository::ChangeFeed::Change(PlaceOS::Model::Repository)
         changefeed = Model::Repository.changes
         spawn do
@@ -50,12 +46,17 @@ module PlaceOS::FrontendLoader
           end
         end
 
-        sleep 1
+        Fiber.yield
+
+        repository = example_repository(commit: "f7c6d8fb810c2be78722249e06bbfbda3d30d355")
+        repository.password = old_token
+        repository.save!
 
         loader = Loader.new
 
         loader.process_resource(:created, repository).success?.should be_true
         repository.reload!
+
         repository.password = new_token
         repository.password_will_change!
         repository.save!
@@ -64,7 +65,7 @@ module PlaceOS::FrontendLoader
         loader.process_resource(:updated, repository).success?.should be_true
 
         changefeed.stop
-        changes.size.should eq 2
+        changes.size.should eq 3
 
         repository.reload!
         encrypted = repository.password.not_nil!
@@ -144,6 +145,43 @@ module PlaceOS::FrontendLoader
         repository.save!
         loader.process_resource(:updated, repository).success?.should be_true
         Dir.exists?(expected_path).should be_true
+      end
+    end
+
+    describe "error handling" do
+      it "should not break on non-existent repo/branch" do
+        loader = Loader.new
+
+        branch = "doesnt-exist"
+        repository.branch = branch
+
+        loader.process_resource(:created, repository).success?.should be_false
+        Dir.exists?(expected_path).should be_false
+        repository = Model::Repository.find!(repository.id.as(String))
+        repository.has_runtime_error.should be_true
+        repository.error_message.should_not be_nil
+      end
+
+      it "should clear error flag when branch is correct" do
+        loader = Loader.new
+        updated_branch = "master"
+        branch = "doesnt-exist"
+        repository.branch = branch
+
+        loader.process_resource(:created, repository).success?.should be_false
+        Dir.exists?(expected_path).should be_false
+        repository = Model::Repository.find!(repository.id.as(String))
+        repository.has_runtime_error.should be_true
+        repository.error_message.should_not be_nil
+
+        repository.branch = updated_branch
+        repository.save!
+        loader.process_resource(:updated, repository).success?.should be_true
+        Dir.exists?(expected_path).should be_true
+
+        repository = Model::Repository.find!(repository.id.as(String))
+        repository.has_runtime_error.should be_false
+        repository.error_message.should be_nil
       end
     end
   end
