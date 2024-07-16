@@ -2,6 +2,7 @@
 
 ### Feat
 
+- **shard.lock**: add crystal 1.13 support
 - PPT-1413 Add error handling + reporting. Clean-up and linting c… ([#84](https://github.com/PlaceOS/frontend-loader/pull/84))
 - **shard.lock**: bump opentelemetry-instrumentation.cr
 
