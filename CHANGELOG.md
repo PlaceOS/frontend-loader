@@ -17,6 +17,10 @@
 - **eventbus**: handle read replica race conditions
 - **loader**: ensure sub directories are updated for www-core ([#83](https://github.com/PlaceOS/frontend-loader/pull/83))
 
+### Refactor
+
+- PPT-1456 Remove Raven dependency ([#85](https://github.com/PlaceOS/frontend-loader/pull/85))
+
 ## v3.0.0 (2023-03-15)
 
 ### Refactor
