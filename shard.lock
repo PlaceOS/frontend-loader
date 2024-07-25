@@ -17,17 +17,13 @@ shards:
     git: https://github.com/crystal-ameba/ameba.git
     version: 1.6.1
 
-  any_hash:
-    git: https://github.com/sija/any_hash.cr.git
-    version: 0.2.5
-
   backtracer:
     git: https://github.com/sija/backtracer.cr.git
     version: 1.2.2
 
   bindata:
     git: https://github.com/spider-gazelle/bindata.git
-    version: 2.0.0
+    version: 2.1.0
 
   connect-proxy:
     git: https://github.com/spider-gazelle/connect-proxy.git
@@ -192,10 +188,6 @@ shards:
   protobuf:
     git: https://github.com/jeromegn/protobuf.cr.git
     version: 2.3.0
-
-  raven:
-    git: https://github.com/sija/raven.cr.git
-    version: 1.9.3+git.commit.990a7650fb027cbe65705fc6dad228cddc76c503
 
   redis:
     git: https://github.com/stefanwille/crystal-redis.git

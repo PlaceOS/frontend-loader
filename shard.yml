@@ -15,7 +15,7 @@ dependencies:
     version: ~> 7.2
 
   git-repository:
-      github: place-labs/git-repository
+    github: place-labs/git-repository
 
   crystar:
     github: naqvis/crystar
@@ -38,11 +38,6 @@ dependencies:
   connect-proxy:
     github: spider-gazelle/connect-proxy
     version: ~> 2.0
-
-  # Sentry integration
-  raven:
-    github: Sija/raven.cr
-    branch: master
 
 development_dependencies:
   ameba:
