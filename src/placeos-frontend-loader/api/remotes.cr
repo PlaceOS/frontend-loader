@@ -73,7 +73,7 @@ module PlaceOS::FrontendLoader::Api
     ) : Array(String)
       repo = GitRepository.new(repository_url, username, password)
       branch = branch || repo.default_branch
-      repo.file_list(ref: branch, path: "drivers/").select do |file|
+      repo.file_list(branch: branch, path: "drivers/").select do |file|
         file.ends_with?(".cr") && !file.ends_with?("_spec.cr") && !file.includes?("models")
       end
     end
