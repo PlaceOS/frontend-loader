@@ -8,6 +8,7 @@
 
 ### Fix
 
+- **remotes**: ensure file listing on a branch works
 - **resource**: replaced change feed iterator with async closure
 - **resource**: replaced change feed iterator with async closure
 - **loader**: specify load timeout
