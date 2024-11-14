@@ -32,8 +32,8 @@ RUN shards install --production --ignore-crystal-version --skip-postinstall --sk
 
 # Add src
 COPY ./src /app/src
-RUN mkdir -p /app/www
-RUN mkdir -p /app/tmp
+RUN mkdir -p /app/www && chmod 0777 /app/www
+RUN mkdir -p /app/tmp && chmod 1777 /app/tmp
 
 # Build application
 RUN PLACE_COMMIT=$PLACE_COMMIT \
@@ -77,8 +77,8 @@ COPY --from=build /usr/libexec/git-core/ /usr/libexec/git-core/
 # Copy the app into place
 COPY --from=build /app/deps /
 COPY --from=build /app/bin /
-COPY --from=build --chown=10001:10001 /app/www /app/www
-COPY --from=build --chown=10001:10001 /app/tmp /tmp
+COPY --from=build /app/www /app/www
+COPY --from=build /app/tmp /tmp
 
 # Use an unprivileged user.
 USER appuser:appuser
