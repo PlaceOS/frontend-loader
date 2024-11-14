@@ -8,6 +8,7 @@
 
 ### Fix
 
+- **Dockerfile**: owner needs to be available in the image
 - **Dockerfile**: allow random user ids in production ([#86](https://github.com/PlaceOS/frontend-loader/pull/86))
 - **remotes**: ensure file listing on a branch works
 - **resource**: replaced change feed iterator with async closure
