@@ -30,10 +30,10 @@ COPY shard.lock .
 
 RUN shards install --production --ignore-crystal-version --skip-postinstall --skip-executables
 
-# Add src
+# Add src (0777 as container may be launch as a random user)
 COPY ./src /app/src
 RUN mkdir -p /app/www && chmod 0777 /app/www
-RUN mkdir -p /app/tmp && chmod 1777 /app/tmp
+RUN mkdir -p /app/tmp && chmod 0777 /app/tmp
 
 # Build application
 RUN PLACE_COMMIT=$PLACE_COMMIT \
@@ -77,8 +77,8 @@ COPY --from=build /usr/libexec/git-core/ /usr/libexec/git-core/
 # Copy the app into place
 COPY --from=build /app/deps /
 COPY --from=build /app/bin /
-COPY --from=build /app/www /app/www
-COPY --from=build /app/tmp /tmp
+COPY --from=build --chown=appuser:appuser --chmod=0777 /app/www/ /app/www/
+COPY --from=build --chown=appuser:appuser --chmod=0777 /app/tmp /tmp/
 
 # Use an unprivileged user.
 USER appuser:appuser
