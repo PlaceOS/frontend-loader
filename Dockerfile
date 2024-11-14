@@ -32,7 +32,7 @@ RUN shards install --production --ignore-crystal-version --skip-postinstall --sk
 
 # Add src
 COPY ./src /app/src
-RUN mkdir -p /app/www && chmod 1777 /app/www
+RUN mkdir -p /app/www && chmod 0777 /app/www
 RUN mkdir -p /app/tmp && chmod 1777 /app/tmp
 
 # Build application
