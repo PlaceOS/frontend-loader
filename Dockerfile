@@ -82,6 +82,8 @@ COPY --from=build --chown=0:0 /app/www /app/www
 COPY --from=build --chown=0:0 /app/tmp /tmp
 
 # This seems to be the only way to set permissions properly
+# this only works as we're copying over the dependencies for git
+# which includes /lib/ld-musl-* files
 COPY --from=build /bin /bin
 RUN chmod -R a+rwX /tmp
 RUN chmod -R a+rwX /app/www
