@@ -1,5 +1,4 @@
 require "placeos-log-backend"
-
 require "./constants"
 
 module PlaceOS::FrontendLoader::Logging
