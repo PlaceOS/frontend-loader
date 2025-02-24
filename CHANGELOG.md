@@ -8,6 +8,7 @@
 
 ### Fix
 
+- file copy issue with some volumes ([#87](https://github.com/PlaceOS/frontend-loader/pull/87))
 - **Dockerfile**: use busybox to set permissions
 - **Dockerfile**: owner needs to be available in the image
 - **Dockerfile**: allow random user ids in production ([#86](https://github.com/PlaceOS/frontend-loader/pull/86))
