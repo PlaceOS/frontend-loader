@@ -1,6 +1,6 @@
 ARG CRYSTAL_VERSION=latest
 
-FROM placeos/crystal:$CRYSTAL_VERSION as build
+FROM placeos/crystal:$CRYSTAL_VERSION AS build
 WORKDIR /app
 
 # Setup commit via a build arg
@@ -87,6 +87,16 @@ COPY --from=build --chown=0:0 /app/tmp /tmp
 COPY --from=build /bin /bin
 RUN chmod -R a+rwX /tmp
 RUN chmod -R a+rwX /app/www
+
+# so we can run commands on remote network volumes
+RUN mkdir /nonexistent/ && chown appuser:appuser /nonexistent/
+USER appuser:appuser
+RUN touch /nonexistent/.gitconfig
+RUN /git config --global --add safe.directory '*'
+
+# remove the shell and make the home folder read only to the user
+USER root:root
+RUN chown -R root:root /nonexistent/
 RUN rm -rf /bin
 
 # Use an unprivileged user.
