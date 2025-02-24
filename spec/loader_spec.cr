@@ -51,6 +51,7 @@ module PlaceOS::FrontendLoader
         repository = example_repository(commit: "f7c6d8fb810c2be78722249e06bbfbda3d30d355")
         repository.password = old_token
         repository.save!
+        sleep 200.milliseconds
 
         loader = Loader.new
 
@@ -60,12 +61,13 @@ module PlaceOS::FrontendLoader
         repository.password = new_token
         repository.password_will_change!
         repository.save!
+        sleep 200.milliseconds
 
         repository = repository.class.find!(repository.id.not_nil!)
         loader.process_resource(:updated, repository).success?.should be_true
 
         changefeed.stop
-        changes.size.should eq 3
+        changes.size.should eq 4
 
         repository.reload!
         encrypted = repository.password.not_nil!
