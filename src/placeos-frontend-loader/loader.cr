@@ -63,10 +63,11 @@ module PlaceOS::FrontendLoader
     protected def create_base_www
       # use our history cache to check if there is a new version available
       www_folder = File.expand_path(content_directory)
+      temp_folder = "/tmp"
       branch = WWW_BRANCH
       latest_commit = @www_repo.commits(branch, 1).first.hash
       if @www_commit != latest_commit
-        temp_path = File.join(www_folder, "#{Time.utc.to_unix_ms}_#{rand(9999)}")
+        temp_path = File.join(temp_folder, "#{Time.utc.to_unix_ms}_#{rand(9999)}")
         begin
           # 1. clone the repo locally (handled by the library)
           # 2. copy the files to the volume in a temp directory
