@@ -50,6 +50,8 @@ RUN for binary in "/usr/bin/git" /app/bin/* /usr/libexec/git-core/*; do \
         xargs -I % sh -c 'mkdir -p $(dirname deps%); cp % deps%;' || true; \
       done
 
+RUN git config --system http.sslCAInfo /etc/ssl/certs/ca-certificates.crt
+
 # Build a minimal docker image
 FROM scratch
 WORKDIR /app
@@ -64,7 +66,9 @@ COPY --from=build /etc/hosts /etc/hosts
 
 # These provide certificate chain validation where communicating with external services over TLS
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=build /etc/gitconfig /etc/gitconfig
 ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+ENV GIT_SSL_CAINFO=/etc/ssl/certs/ca-certificates.crt
 
 # This is required for Timezone support
 COPY --from=build /usr/share/zoneinfo/ /usr/share/zoneinfo/
