@@ -8,6 +8,7 @@
 
 ### Fix
 
+- use debian as musl libc doesn't work with NFS
 - **Dockerfile**: make git certificate store is explicit
 - file copy issue with some volumes ([#87](https://github.com/PlaceOS/frontend-loader/pull/87))
 - **Dockerfile**: use busybox to set permissions
