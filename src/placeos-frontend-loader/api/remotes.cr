@@ -13,7 +13,7 @@ module PlaceOS::FrontendLoader::Api
       @[AC::Param::Info(description: "a username for access if required", example: "steve")]
       @username : String? = nil,
       @[AC::Param::Info(description: "the password or access token as required", example: "ab34cfe4567")]
-      @password : String? = nil
+      @password : String? = nil,
     )
     end
 
@@ -44,7 +44,7 @@ module PlaceOS::FrontendLoader::Api
       @[AC::Param::Info(description: "the number of commits to return", example: "50")]
       depth : Int32 = 50,
       @[AC::Param::Info(description: "the file we want to grab commits from", example: "src/place/meet.cr")]
-      file : String? = nil
+      file : String? = nil,
     ) : Array(GitRepository::Commit)
       repo = GitRepository.new(repository_url, username, password)
       branch = branch || repo.default_branch
@@ -69,7 +69,7 @@ module PlaceOS::FrontendLoader::Api
     @[AC::Route::GET("/:repository_url/drivers")]
     def drivers(
       @[AC::Param::Info(description: "the branch to grab commits from", example: "main")]
-      branch : String? = nil
+      branch : String? = nil,
     ) : Array(String)
       repo = GitRepository.new(repository_url, username, password)
       branch = branch || repo.default_branch

@@ -32,7 +32,7 @@ def example_repository(
   folder_name : String = UUID.random.to_s[0..8],
   uri : String = "https://www.github.com/placeos/compiler",
   commit : String = "HEAD",
-  branch : String = "master"
+  branch : String = "master",
 )
   existing = PlaceOS::Model::Repository.where(folder_name: folder_name).first?
   if existing

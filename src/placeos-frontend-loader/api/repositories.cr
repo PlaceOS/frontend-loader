@@ -55,7 +55,7 @@ module PlaceOS::FrontendLoader::Api
       @[AC::Param::Info(description: "the branch to grab commits from", example: "main")]
       branch : String? = nil,
       @[AC::Param::Info(description: "the number of commits to return", example: "50")]
-      depth : Int32 = 50
+      depth : Int32 = 50,
     ) : Array(GitRepository::Commit)
       repo = repo_cache
       branch = branch || repo.default_branch

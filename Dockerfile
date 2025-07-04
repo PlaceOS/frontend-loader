@@ -1,6 +1,7 @@
 ARG CRYSTAL_VERSION=latest
 
-FROM placeos/crystal:$CRYSTAL_VERSION AS build
+# FROM placeos/crystal:$CRYSTAL_VERSION AS build
+FROM 84codes/crystal:latest-debian-12 AS build
 WORKDIR /app
 
 # Setup commit via a build arg
@@ -23,6 +24,36 @@ RUN adduser \
     --uid "${UID}" \
     "${USER}"
 
+# Update package list and install packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    autoconf \
+    automake \
+    libtool \
+    patch \
+    ca-certificates \
+    libyaml-dev \
+    bash \
+    wget \
+    iputils-ping \
+    libelf-dev \
+    libgmp-dev \
+    liblz4-dev \
+    tzdata \
+    curl \
+    liblzma-dev \
+    xz-utils \
+    libssh2-1-dev \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Update CA certificates
+RUN update-ca-certificates
+
+# Set environment variables for TLS CA validation
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+ENV GIT_SSL_CAINFO=/etc/ssl/certs/ca-certificates.crt
+RUN git config --system http.sslCAInfo /etc/ssl/certs/ca-certificates.crt
+
 # Install shards for caching
 COPY shard.yml .
 COPY shard.override.yml .
@@ -40,10 +71,10 @@ RUN PLACE_COMMIT=$PLACE_COMMIT \
     PLACE_VERSION=$PLACE_VERSION \
     shards build --production --error-trace
 
-SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
 # Extract binary dependencies
-RUN for binary in "/usr/bin/git" /app/bin/* /usr/libexec/git-core/*; do \
+RUN for binary in "/usr/bin/git" /app/bin/* /usr/share/git-core/* /usr/lib/git-core/*; do \
         ldd "$binary" | \
         tr -s '[:blank:]' '\n' | \
         grep '^/' | \
@@ -51,6 +82,16 @@ RUN for binary in "/usr/bin/git" /app/bin/* /usr/libexec/git-core/*; do \
       done
 
 RUN git config --system http.sslCAInfo /etc/ssl/certs/ca-certificates.crt
+
+# obtain busy box for file ops in scratch image
+ARG TARGETARCH
+RUN case "${TARGETARCH}" in \
+      amd64) ARCH=x86_64 ;; \
+      arm64) ARCH=armv8l ;; \
+      *) echo "Unsupported arch: ${TARGETARCH}" && exit 1 ;; \
+    esac && \
+    wget -O /busybox https://busybox.net/downloads/binaries/1.31.0-defconfig-multiarch-musl/busybox-${ARCH} && \
+    chmod +x /busybox
 
 # Build a minimal docker image
 FROM scratch
@@ -62,7 +103,10 @@ COPY --from=build etc/passwd /etc/passwd
 COPY --from=build /etc/group /etc/group
 
 # These are required for communicating with external services
-COPY --from=build /etc/hosts /etc/hosts
+# COPY --from=build /etc/hosts /etc/hosts
+
+COPY --from=build /busybox /bin/busybox
+SHELL ["/bin/busybox", "sh", "-euo", "pipefail", "-c"]
 
 # These provide certificate chain validation where communicating with external services over TLS
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
@@ -76,7 +120,7 @@ COPY --from=build /usr/share/zoneinfo/ /usr/share/zoneinfo/
 # git for querying remote repositories
 COPY --from=build /usr/bin/git /git
 COPY --from=build /usr/share/git-core/ /usr/share/git-core/
-COPY --from=build /usr/libexec/git-core/ /usr/libexec/git-core/
+COPY --from=build /usr/lib/git-core/ /usr/lib/git-core/
 
 # Copy the app into place
 COPY --from=build /app/deps /
@@ -88,20 +132,20 @@ COPY --from=build --chown=0:0 /app/tmp /tmp
 # This seems to be the only way to set permissions properly
 # this only works as we're copying over the dependencies for git
 # which includes /lib/ld-musl-* files
-COPY --from=build /bin /bin
-RUN chmod -R a+rwX /tmp
-RUN chmod -R a+rwX /app/www
+# COPY --from=build /bin /bin
+RUN /bin/busybox chmod -R a+rwX /tmp
+RUN /bin/busybox chmod -R a+rwX /app/www
 
 # so we can run commands on remote network volumes
-RUN mkdir /nonexistent/ && chown appuser:appuser /nonexistent/
+RUN /bin/busybox mkdir /nonexistent/ && /bin/busybox chown appuser:appuser /nonexistent/
 USER appuser:appuser
-RUN touch /nonexistent/.gitconfig
+RUN /bin/busybox touch /nonexistent/.gitconfig
 RUN /git config --global --add safe.directory '*'
 
 # remove the shell and make the home folder read only to the user
 USER root:root
-RUN chown -R root:root /nonexistent/
-RUN rm -rf /bin
+RUN /bin/busybox chown -R root:root /nonexistent/
+RUN /bin/busybox rm -rf /bin/busybox
 
 # Use an unprivileged user.
 USER appuser:appuser

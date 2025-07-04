@@ -75,7 +75,7 @@ shards:
 
   git-repository:
     git: https://github.com/place-labs/git-repository.git
-    version: 1.4.1
+    version: 1.5.0
 
   google:
     git: https://github.com/placeos/google.git

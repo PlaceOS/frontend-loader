@@ -84,7 +84,7 @@ module PlaceOS::FrontendLoader
       file : String? = nil,
       depth : Int32? = nil,
       username : String? = nil,
-      password : String? = nil
+      password : String? = nil,
     )
       encoded_url = URI.encode_www_form(repository_url)
       params = URI::Params.build do |form|
@@ -148,7 +148,7 @@ module PlaceOS::FrontendLoader
     def initialize(
       @uri : URI = DEFAULT_URI,
       @request_id : String? = nil,
-      @api_version : String = API_VERSION
+      @api_version : String = API_VERSION,
     )
       @connection = HTTP::Client.new(@uri)
     end

@@ -36,7 +36,7 @@ module PlaceOS::FrontendLoader
 
     def initialize(
       @content_directory : String = Loader.settings.content_directory,
-      @update_crontab : String = Loader.settings.update_crontab
+      @update_crontab : String = Loader.settings.update_crontab,
     )
       # we want to cache this repo and then copy any changes into www folder
       @www_repo = GitRepository.new(BASE_REF, branch: WWW_BRANCH)
@@ -192,7 +192,7 @@ module PlaceOS::FrontendLoader
     # ameba:disable Metrics/CyclomaticComplexity
     def self.load(
       repository : Model::Repository,
-      content_directory : String
+      content_directory : String,
     )
       Log.trace { "loading repository #{repository.folder_name}: #{repository.uri} (branch: #{repository.branch})" }
 
@@ -270,7 +270,7 @@ module PlaceOS::FrontendLoader
 
     def self.unload(
       repository : Model::Repository,
-      content_directory : String
+      content_directory : String,
     )
       content_directory = File.expand_path(content_directory)
       repository_dir = File.expand_path(File.join(content_directory, repository.folder_name))
