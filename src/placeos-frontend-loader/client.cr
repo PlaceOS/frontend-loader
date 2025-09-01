@@ -143,6 +143,19 @@ module PlaceOS::FrontendLoader
       response.body
     end
 
+    # List of folders in a repository
+    def folders(repository_url : String, branch : String? = nil, username : String? = nil, password : String? = nil, include_dots : Bool = false)
+      encoded_url = URI.encode_www_form(repository_url)
+      params = URI::Params.build do |form|
+        form.add("username", username.to_s) if username.presence
+        form.add("password", password.to_s) if password.presence
+        form.add("branch", branch.to_s) if branch.presence
+        form.add("include_dots", include_dots.to_s)
+      end
+      response = get("/remotes/#{encoded_url}/folders?#{params}")
+      Array(String).from_json(response.body)
+    end
+
     ###########################################################################
 
     def initialize(
