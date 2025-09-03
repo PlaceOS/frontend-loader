@@ -169,8 +169,10 @@ module PlaceOS::FrontendLoader
         Log.trace { "#{repository.folder_name}: already loaded, checking for relevant changes" }
         old_repo = loaded.repo
         old_folder_name = old_repo.folder_name
+        old_root_path = old_repo.root_path
 
         if old_folder_name == repository.folder_name &&
+           old_root_path == repository.root_path &&
            old_repo.branch == repository.branch &&
            old_repo.username == repository.username &&
            old_repo.password == repository.password &&
@@ -233,7 +235,11 @@ module PlaceOS::FrontendLoader
       if download_required
         Log.trace { "#{repository.folder_name}: downloading new content" }
         commit_ref = repository.commit_hash == "HEAD" ? repository.branch : repository.commit_hash
-        commit = cache.fetch_commit(commit_ref, repository_directory)
+        commit = if root = repository.root_path
+                   cache.fetch_folder(commit_ref, root, repository_directory)
+                 else
+                   cache.fetch_commit(commit_ref, repository_directory)
+                 end
 
         # remove old files if folder name changed
         if old_folder_name != repository.folder_name

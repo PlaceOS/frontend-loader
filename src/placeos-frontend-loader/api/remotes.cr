@@ -84,5 +84,20 @@ module PlaceOS::FrontendLoader::Api
       repo = GitRepository.new(repository_url, username, password)
       repo.default_branch
     end
+
+    # lists the folders in a repository
+    @[AC::Route::GET("/:repository_url/folders")]
+    def folders(
+      @[AC::Param::Info(description: "the branch to grab commits from", example: "main")]
+      branch : String? = nil,
+      @[AC::Param::Info(description: "include dot folders, defaults to false", example: "true")]
+      include_dots : Bool = false,
+    ) : Array(String)
+      repo = GitRepository.new(repository_url, username, password)
+      branch = branch || repo.default_branch
+      folders = repo.folder_list(branch: branch)
+      folders = folders.reject(&.starts_with?(".")) unless include_dots
+      folders
+    end
   end
 end

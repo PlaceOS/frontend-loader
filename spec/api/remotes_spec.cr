@@ -34,5 +34,12 @@ module PlaceOS::FrontendLoader::Api
       result = client.get(route)
       Array(String).from_json(result.body).includes?("v1.3.0").should be_true
     end
+
+    it "lists folders in a given repository" do
+      encoded_url = URI.encode_www_form("https://www.github.com/PlaceOS/frontend-loader")
+      route = "#{remotes_base}/#{encoded_url}/folders"
+      result = client.get(route)
+      Array(String).from_json(result.body).includes?("src").should be_true
+    end
   end
 end
