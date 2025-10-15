@@ -9,6 +9,7 @@
 
 ### Fix
 
+- **loader**: treat root_folder props set to blank as nil ([#89](https://github.com/PlaceOS/frontend-loader/pull/89))
 - use debian as musl libc doesn't work with NFS
 - **Dockerfile**: make git certificate store is explicit
 - file copy issue with some volumes ([#87](https://github.com/PlaceOS/frontend-loader/pull/87))
