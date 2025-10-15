@@ -200,6 +200,7 @@ module PlaceOS::FrontendLoader
 
       # check for any relevant changes
       rebuild_cache, old_folder_name = check_for_changes(repository)
+      Log.trace { {message: "check_for_changes", rebuild_cache: rebuild_cache, folder_name: old_folder_name} }
       has_error = false
       error_message = nil
       # rebuild caches
@@ -235,9 +236,11 @@ module PlaceOS::FrontendLoader
       if download_required
         Log.trace { "#{repository.folder_name}: downloading new content" }
         commit_ref = repository.commit_hash == "HEAD" ? repository.branch : repository.commit_hash
-        commit = if root = repository.root_path
+        commit = if (root = repository.root_path) && !root.blank?
+                   Log.trace { "Fetching folder as root_path property is set: '#{root}', size: #{root.size}" }
                    cache.fetch_folder(commit_ref, root, repository_directory)
                  else
+                   Log.trace { {message: "Fetching commit", commit_ref: commit_ref, repo_dir: repository_directory} }
                    cache.fetch_commit(commit_ref, repository_directory)
                  end
 
