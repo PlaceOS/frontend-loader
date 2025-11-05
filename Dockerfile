@@ -93,6 +93,9 @@ RUN case "${TARGETARCH}" in \
     wget -O /busybox https://busybox.net/downloads/binaries/1.31.0-defconfig-multiarch-musl/busybox-${ARCH} && \
     chmod +x /busybox
 
+# Create tmp directory with proper permissions
+RUN rm -rf /tmp && mkdir -p /tmp && chmod 1777 /tmp
+
 # Build a minimal docker image
 FROM scratch
 WORKDIR /app
@@ -128,6 +131,9 @@ COPY --from=build /app/bin /
 
 COPY --from=build --chown=0:0 /app/www /app/www
 COPY --from=build --chown=0:0 /app/tmp /tmp
+
+# Copy tmp directory
+COPY --from=build /tmp /tmp
 
 # This seems to be the only way to set permissions properly
 # this only works as we're copying over the dependencies for git
