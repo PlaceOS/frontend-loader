@@ -142,9 +142,11 @@ module PlaceOS::FrontendLoader
           return Resource::Result::Skipped
         end
 
-        # Skip load for error indicator update actions
-        if (changes = repository.changed_attributes) && (changes[:has_runtime_error]? || changes[:error_message]?)
-          return Resource::Result::Skipped
+        # Skip load for error indicator update actions (only for Updated, not Created)
+        # This prevents retry loops when we update the error fields
+        if action.updated? && (changes = repository.changed_attributes) && !changes.empty?
+          error_only_changes = changes.keys.all? { |key| key.in?(:has_runtime_error, :error_message, :updated_at) }
+          return Resource::Result::Skipped if error_only_changes
         end
 
         # Load the repository
@@ -219,7 +221,12 @@ module PlaceOS::FrontendLoader
                 repo_cache.cache
               end
 
-      Model::Repository.update(repository.id, {has_runtime_error: has_error, error_message: error_message}) if has_error || repository.has_runtime_error
+      # Only update error fields if they've actually changed to avoid triggering unnecessary events
+      if has_error || repository.has_runtime_error
+        if repository.has_runtime_error != has_error || repository.error_message != error_message
+          Model::Repository.update(repository.id, {has_runtime_error: has_error, error_message: error_message})
+        end
+      end
       return Resource::Result::Error unless cache
       # grab the required commit
       content_directory = File.expand_path(content_directory)
