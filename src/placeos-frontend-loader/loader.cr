@@ -16,6 +16,8 @@ module PlaceOS::FrontendLoader
     Habitat.create do
       setting content_directory : String = WWW
       setting update_crontab : String = CRON
+      setting max_retry_attempts : Int32 = MAX_RETRY_ATTEMPTS
+      setting max_backoff_seconds : Int32 = MAX_BACKOFF_SECONDS
     end
 
     class_getter instance : Loader do
@@ -33,6 +35,10 @@ module PlaceOS::FrontendLoader
     class_getter id_lookup : Hash(String, RepoCache) = {} of String => RepoCache
     class_getter uri_lookup : Hash(String, RepoCache) = {} of String => RepoCache
     class_getter folder_lookup : Hash(String, RepoCache) = {} of String => RepoCache
+
+    # Track retry attempts for exponential backoff
+    class_getter retry_attempts : Hash(String, Int32) = {} of String => Int32
+    class_getter last_retry_time : Hash(String, Time) = {} of String => Time
 
     def initialize(
       @content_directory : String = Loader.settings.content_directory,
@@ -142,19 +148,74 @@ module PlaceOS::FrontendLoader
           return Resource::Result::Skipped
         end
 
-        # Skip load for error indicator update actions (only for Updated, not Created)
-        # This prevents retry loops when we update the error fields
+        # Implement exponential backoff for error-only updates
         if action.updated? && (changes = repository.changed_attributes) && !changes.empty?
           error_only_changes = changes.keys.all? { |key| key.in?(:has_runtime_error, :error_message, :updated_at) }
-          return Resource::Result::Skipped if error_only_changes
+
+          # Skip processing if only error fields changed
+          if error_only_changes
+            # If error flag is being cleared (recovery), skip without retry logic
+            unless repository.has_runtime_error
+              Log.debug { "#{repository.folder_name}: skipping error flag clear update" }
+              return Resource::Result::Skipped
+            end
+
+            # Error flag is still set - apply backoff for retry
+            repo_id = repository.id.not_nil!
+            attempt = Loader.retry_attempts[repo_id]? || 0
+
+            # Stop retrying after max attempts
+            max_attempts = Loader.settings.max_retry_attempts
+            if attempt >= max_attempts
+              Log.warn { "#{repository.folder_name}: max retry attempts (#{max_attempts}) reached, giving up" }
+              return Resource::Result::Skipped
+            end
+
+            last_retry = Loader.last_retry_time[repo_id]?
+
+            if last_retry
+              # Calculate backoff: min(attempt^2, max_backoff_seconds)
+              max_backoff = Loader.settings.max_backoff_seconds
+              backoff_seconds = Math.min(attempt ** 2, max_backoff)
+              elapsed = (Time.utc - last_retry).total_seconds
+
+              if elapsed < backoff_seconds
+                Log.debug { "#{repository.folder_name}: skipping retry, backoff not elapsed (#{elapsed.to_i}/#{backoff_seconds}s)" }
+                return Resource::Result::Skipped
+              end
+            end
+
+            # Update retry tracking
+            Loader.retry_attempts[repo_id] = attempt + 1
+            Loader.last_retry_time[repo_id] = Time.utc
+            max_backoff = Loader.settings.max_backoff_seconds
+            max_attempts = Loader.settings.max_retry_attempts
+            backoff = Math.min(attempt ** 2, max_backoff)
+            Log.info { "#{repository.folder_name}: retrying after error (attempt #{attempt + 1}/#{max_attempts}, backoff: #{backoff}s)" }
+          end
         end
 
         # Load the repository
-        Loader.load(
+        result = Loader.load(
           repository: repository,
           content_directory: @content_directory,
         )
+
+        # Reset retry counter on success
+        if result == Resource::Result::Success
+          repo_id = repository.id.not_nil!
+          Loader.retry_attempts.delete(repo_id)
+          Loader.last_retry_time.delete(repo_id)
+        end
+
+        result
       in Action::Deleted
+        # Clean up retry tracking on deletion
+        if repo_id = repository.id
+          Loader.retry_attempts.delete(repo_id)
+          Loader.last_retry_time.delete(repo_id)
+        end
+
         # Unload the repository
         Loader.unload(
           repository: repository,
@@ -228,6 +289,7 @@ module PlaceOS::FrontendLoader
         end
       end
       return Resource::Result::Error unless cache
+
       # grab the required commit
       content_directory = File.expand_path(content_directory)
       repository_directory = File.join(content_directory, repository.folder_name)

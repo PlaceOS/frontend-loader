@@ -9,6 +9,9 @@ module PlaceOS::FrontendLoader
       repository = example_repository(TEST_FOLDER)
       expected_path = File.join(TEST_DIR, repository.folder_name)
       reset
+      # Clear retry tracking between tests
+      Loader.retry_attempts.clear
+      Loader.last_retry_time.clear
     end
 
     describe "#startup_finished?" do
@@ -186,7 +189,7 @@ module PlaceOS::FrontendLoader
         repository.error_message.should be_nil
       end
 
-      it "should not retry when only error fields are updated" do
+      it "should retry with exponential backoff when only error fields are updated" do
         changes = [] of PlaceOS::Model::Repository::ChangeFeed::Change(PlaceOS::Model::Repository)
         changefeed = Model::Repository.changes
         spawn do
@@ -230,12 +233,76 @@ module PlaceOS::FrontendLoader
         update_change = changes.find(&.updated?)
         update_change.should_not be_nil
 
-        # When processing this update that only changed error fields, it should skip
+        # First retry should happen immediately (attempt 1, backoff = 1^2 = 1s)
+        result = loader.process_resource(:updated, update_change.not_nil!.value)
+        result.error?.should be_true # Still fails because branch doesn't exist
+
+        # Wait for any changefeed events from the load failure to be processed
+        sleep 300.milliseconds
+
+        # Clear changes and trigger another error-only update
+        changes.clear
+        Model::Repository.update(repository.id, {
+          has_runtime_error: true,
+          error_message:     "Still failing",
+        })
+        sleep 200.milliseconds
+
+        # Verify retry tracking was set
+        repo_id = repository.id.not_nil!
+        Loader.retry_attempts[repo_id].should eq 1
+        Loader.last_retry_time[repo_id].should_not be_nil
+
+        # Verify no successful clone happened
+        Dir.exists?(expected_path).should be_false
+
+        changefeed.stop
+      end
+
+      it "should stop retrying after max attempts" do
+        changes = [] of PlaceOS::Model::Repository::ChangeFeed::Change(PlaceOS::Model::Repository)
+        changefeed = Model::Repository.changes
+        spawn do
+          changefeed.each do |change|
+            changes << change
+          end
+        end
+
+        Fiber.yield
+
+        loader = Loader.new
+        branch = "doesnt-exist"
+        repository.branch = branch
+        repository.save!
+
+        # First attempt should fail
+        loader.process_resource(:created, repository).success?.should be_false
+
+        # Simulate max retry attempts by directly setting the counter
+        repo_id = repository.id.not_nil!
+        max_attempts = Loader.settings.max_retry_attempts
+        Loader.retry_attempts[repo_id] = max_attempts
+
+        # Clear changes to track only the next error field update
+        changes.clear
+
+        # Now update only the error fields through the ORM
+        Model::Repository.update(repository.id, {
+          has_runtime_error: true,
+          error_message:     "Max retries test",
+        })
+        sleep 200.milliseconds
+
+        # The changefeed should have received an update event
+        update_change = changes.find(&.updated?)
+        update_change.should_not be_nil
+
+        # Now when we try to process this error-only update, it should skip due to max retries
         result = loader.process_resource(:updated, update_change.not_nil!.value)
         result.skipped?.should be_true
 
-        # Verify no additional clone attempts were made
-        Dir.exists?(expected_path).should be_false
+        # Verify it doesn't increment beyond max
+        Loader.retry_attempts[repo_id].should eq max_attempts
 
         changefeed.stop
       end

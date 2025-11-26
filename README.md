@@ -20,6 +20,15 @@ Included in this repo is an alpine based Dockerfile.
 - If a repository commit is specified it will held at that commit.
 - Configuring the update frequency is done via a CRON in `PLACE_LOADER_CRON` environment variable, or the `--update-cron` flag. Use [crontab guru](https://crontab.guru/) to validate your CRONs!!!
 
+### Retry Configuration
+
+When repository loading fails (e.g., network issues, GitHub downtime), the loader automatically retries with exponential backoff:
+
+- `PLACE_LOADER_MAX_RETRY_ATTEMPTS`: Maximum number of retry attempts before giving up (default: `10`)
+- `PLACE_LOADER_MAX_BACKOFF_SECONDS`: Maximum backoff time between retries in seconds (default: `300` / 5 minutes)
+
+Backoff timing follows the pattern: attempt² seconds (1s, 4s, 9s, 16s...) capped at the max backoff value.
+
 ### Client
 
 Included is a simple client that can be configured via the `PLACE_LOADER_URI` environment variable.
