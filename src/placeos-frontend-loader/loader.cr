@@ -306,8 +306,8 @@ module PlaceOS::FrontendLoader
         Log.trace { "#{repository.folder_name}: downloading new content" }
         commit_ref = repository.commit_hash == "HEAD" ? repository.branch : repository.commit_hash
         commit = if (root = repository.root_path) && !root.blank?
-                   Log.trace { "Fetching folder as root_path property is set: '#{root}', size: #{root.size}" }
-                   cache.fetch_folder(commit_ref, root, repository_directory)
+                   Log.trace { "Fetching folder contents as root_path property is set: '#{root}', size: #{root.size}" }
+                   cache.fetch_folder_contents(commit_ref, root, repository_directory)
                  else
                    Log.trace { {message: "Fetching commit", commit_ref: commit_ref, repo_dir: repository_directory} }
                    cache.fetch_commit(commit_ref, repository_directory)
