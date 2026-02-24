@@ -1,7 +1,7 @@
 ARG CRYSTAL_VERSION=latest
 
-# FROM placeos/crystal:$CRYSTAL_VERSION AS build
-FROM 84codes/crystal:latest-debian-12 AS build
+FROM placeos/crystal:$CRYSTAL_VERSION AS build
+# FROM 84codes/crystal:latest-debian-12 AS build
 WORKDIR /app
 
 # Setup commit via a build arg
@@ -24,27 +24,8 @@ RUN adduser \
     --uid "${UID}" \
     "${USER}"
 
-# Update package list and install packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    autoconf \
-    automake \
-    libtool \
-    patch \
-    ca-certificates \
-    libyaml-dev \
-    bash \
-    wget \
-    iputils-ping \
-    libelf-dev \
-    libgmp-dev \
-    liblz4-dev \
-    tzdata \
-    curl \
-    liblzma-dev \
-    xz-utils \
-    libssh2-1-dev \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+# Install package updates since image release
+RUN apk update && apk --no-cache --quiet upgrade
 
 # Update CA certificates
 RUN update-ca-certificates
@@ -69,12 +50,12 @@ RUN mkdir -p /app/tmp
 # Build application
 RUN PLACE_COMMIT=$PLACE_COMMIT \
     PLACE_VERSION=$PLACE_VERSION \
-    shards build --production --error-trace
+    shards build --production --error-trace --static
 
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
 # Extract binary dependencies
-RUN for binary in "/usr/bin/git" /app/bin/* /usr/share/git-core/* /usr/lib/git-core/*; do \
+RUN for binary in "/usr/bin/git" /app/bin/* /usr/libexec/git-core/*; do \
         ldd "$binary" | \
         tr -s '[:blank:]' '\n' | \
         grep '^/' | \
@@ -120,7 +101,7 @@ COPY --from=build /usr/share/zoneinfo/ /usr/share/zoneinfo/
 # git for querying remote repositories
 COPY --from=build /usr/bin/git /git
 COPY --from=build /usr/share/git-core/ /usr/share/git-core/
-COPY --from=build /usr/lib/git-core/ /usr/lib/git-core/
+COPY --from=build /usr/libexec/git-core/ /usr/libexec/git-core/
 
 # Copy the app into place
 COPY --from=build /app/deps /
