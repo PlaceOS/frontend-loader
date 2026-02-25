@@ -71,6 +71,15 @@ end
 
 require "./config"
 
+# Clean up any leftover temp folders from previous runs
+www_dir = File.expand_path(PlaceOS::FrontendLoader::WWW)
+temp_dirs = Dir.children(www_dir)
+  .select { |child| File.directory?(Path[www_dir, child]) }
+  .select(&.matches?(/^.+_temp_\d+$/))
+  .map { |dir| Path[www_dir, dir] }
+temp_dirs.each { |dir| Log.info { "removing stale temp folder: #{Path[dir].basename}" } }
+FileUtils.rm_rf(temp_dirs) unless temp_dirs.empty?
+
 # Configure the database connection. First check if PG_DATABASE_URL environment variable
 # is set. If not, assume database configuration are set via individual environment variables
 if pg_url = ENV["PG_DATABASE_URL"]?
