@@ -132,7 +132,27 @@ module PlaceOS::FrontendLoader
       load_resources(timeout: LOAD_TIMEOUT).tap do
         # Pull base PlaceOS WWW folder
         create_base_www
+        # Clean up stale temp folders
+        cleanup_stale_temp_folders
       end
+    end
+
+    # Remove temp folders older than 12 hours
+    protected def cleanup_stale_temp_folders
+      www_folder = File.expand_path(content_directory)
+      cutoff_time = Time.utc - 12.hours
+
+      stale_dirs = Dir.children(www_folder)
+        .select { |child| File.directory?(Path[www_folder, child]) }
+        .select(&.matches?(/^.+_temp_\d+$/))
+        .select do |dir|
+          path = Path[www_folder, dir]
+          File.info?(path).try { |info| info.modification_time < cutoff_time } || false
+        end
+
+      stale_dirs.each { |dir| Log.info { "removing stale temp folder: #{dir}" } }
+      stale_dirs.map! { |dir| Path[www_folder, dir].to_s }
+      FileUtils.rm_rf(stale_dirs) unless stale_dirs.empty?
     end
 
     def process_resource(action : Resource::Action, resource : Model::Repository) : Resource::Result
