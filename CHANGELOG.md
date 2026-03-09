@@ -2,6 +2,7 @@
 
 ### Feat
 
+- [PPT-2388] add cron task to prune strayed clone folders ([#94](https://github.com/PlaceOS/frontend-loader/pull/94))
 - **Dockerfile**: switch to static build
 - [PPT-2172] support retrieving root path folder ([#88](https://github.com/PlaceOS/frontend-loader/pull/88))
 - **shard.lock**: add crystal 1.13 support
