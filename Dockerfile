@@ -25,15 +25,7 @@ RUN adduser \
     "${USER}"
 
 # Install package updates since image release
-RUN apk add \
-  --update \
-  --no-cache \
-  libunwind-static \
-  libunwind-dev \
-  xz-static \
-  xz-dev \
-  file \
-  git
+RUN apk update && apk --no-cache --quiet upgrade
 
 # Update CA certificates
 RUN update-ca-certificates
@@ -88,7 +80,7 @@ RUN case "${TARGETARCH}" in \
       arm64) ARCH=armv8l ;; \
       *) echo "Unsupported arch: ${TARGETARCH}" && exit 1 ;; \
     esac && \
-    wget --progress=dot:giga -O /busybox "https://busybox.net/downloads/binaries/1.31.0-defconfig-multiarch-musl/busybox-${ARCH}" && \
+    wget -q -O /busybox "https://busybox.net/downloads/binaries/1.31.0-defconfig-multiarch-musl/busybox-${ARCH}" && \
     chmod +x /busybox
 
 # Build a minimal docker image
