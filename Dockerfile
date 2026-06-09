@@ -25,7 +25,15 @@ RUN adduser \
     "${USER}"
 
 # Install package updates since image release
-RUN apk update && apk --no-cache --quiet upgrade
+RUN apk add \
+  --update \
+  --no-cache \
+  libunwind-static \
+  libunwind-dev \
+  xz-static \
+  xz-dev \
+  file \
+  git
 
 # Update CA certificates
 RUN update-ca-certificates
@@ -50,16 +58,25 @@ RUN mkdir -p /app/tmp
 # Build application
 RUN PLACE_COMMIT=$PLACE_COMMIT \
     PLACE_VERSION=$PLACE_VERSION \
-    shards build --production --error-trace --static
+    shards build \
+      --debug \
+      --error-trace \
+      --no-color \
+      --static \
+      -O1 \
+      --frame-pointers=always \
+      --link-flags "-no-pie -Wl,-no-pie -Wl,--eh-frame-hdr -Wl,--build-id -rdynamic -Wl,--export-dynamic -lunwind -llzma"
 
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
 # Extract binary dependencies
-RUN for binary in "/usr/bin/git" /app/bin/* /usr/libexec/git-core/*; do \
-        ldd "$binary" | \
+RUN mkdir -p /app/deps && \
+    for binary in "/usr/bin/git" /app/bin/* /usr/libexec/git-core/*; do \
+        file "$binary" | grep -q ELF || continue; \
+        ldd "$binary" 2>/dev/null | \
         tr -s '[:blank:]' '\n' | \
         grep '^/' | \
-        xargs -I % sh -c 'mkdir -p $(dirname deps%); cp % deps%;' || true; \
+        xargs -I % sh -c 'mkdir -p "/app/deps$(dirname %)"; cp "%" "/app/deps%"' || true; \
       done
 
 RUN git config --system http.sslCAInfo /etc/ssl/certs/ca-certificates.crt
@@ -103,8 +120,12 @@ COPY --from=build /usr/bin/git /git
 COPY --from=build /usr/share/git-core/ /usr/share/git-core/
 COPY --from=build /usr/libexec/git-core/ /usr/libexec/git-core/
 
-# Copy the app into place
+# Copy the app and its dependencies into place
 COPY --from=build /app/deps /
+
+# Copy the musl dynamic linker (required for dynamically linked binaries like git)
+COPY --from=build /lib/ld-musl-* /lib/
+
 COPY --from=build /app/bin /
 
 COPY --from=build --chown=0:0 /app/www /app/www
