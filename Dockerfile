@@ -88,7 +88,7 @@ RUN case "${TARGETARCH}" in \
       arm64) ARCH=armv8l ;; \
       *) echo "Unsupported arch: ${TARGETARCH}" && exit 1 ;; \
     esac && \
-    wget -O /busybox https://busybox.net/downloads/binaries/1.31.0-defconfig-multiarch-musl/busybox-${ARCH} && \
+    wget --progress=dot:giga -O /busybox "https://busybox.net/downloads/binaries/1.31.0-defconfig-multiarch-musl/busybox-${ARCH}" && \
     chmod +x /busybox
 
 # Build a minimal docker image
