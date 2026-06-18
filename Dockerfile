@@ -50,25 +50,16 @@ RUN mkdir -p /app/tmp
 # Build application
 RUN PLACE_COMMIT=$PLACE_COMMIT \
     PLACE_VERSION=$PLACE_VERSION \
-    shards build \
-      --debug \
-      --error-trace \
-      --no-color \
-      --static \
-      -O1 \
-      --frame-pointers=always \
-      --link-flags "-no-pie -Wl,-no-pie -Wl,--eh-frame-hdr -Wl,--build-id -rdynamic -Wl,--export-dynamic -lunwind -llzma"
+    shards build --production --error-trace --static
 
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
 # Extract binary dependencies
-RUN mkdir -p /app/deps && \
-    for binary in "/usr/bin/git" /app/bin/* /usr/libexec/git-core/*; do \
-        file "$binary" | grep -q ELF || continue; \
-        ldd "$binary" 2>/dev/null | \
+RUN for binary in "/usr/bin/git" /app/bin/* /usr/libexec/git-core/*; do \
+        ldd "$binary" | \
         tr -s '[:blank:]' '\n' | \
         grep '^/' | \
-        xargs -I % sh -c 'mkdir -p "/app/deps$(dirname %)"; cp "%" "/app/deps%"' || true; \
+        xargs -I % sh -c 'mkdir -p $(dirname deps%); cp % deps%;' || true; \
       done
 
 RUN git config --system http.sslCAInfo /etc/ssl/certs/ca-certificates.crt
@@ -80,7 +71,7 @@ RUN case "${TARGETARCH}" in \
       arm64) ARCH=armv8l ;; \
       *) echo "Unsupported arch: ${TARGETARCH}" && exit 1 ;; \
     esac && \
-    wget -q -O /busybox "https://busybox.net/downloads/binaries/1.31.0-defconfig-multiarch-musl/busybox-${ARCH}" && \
+    wget -O /busybox https://busybox.net/downloads/binaries/1.31.0-defconfig-multiarch-musl/busybox-${ARCH} && \
     chmod +x /busybox
 
 # Build a minimal docker image
@@ -112,12 +103,8 @@ COPY --from=build /usr/bin/git /git
 COPY --from=build /usr/share/git-core/ /usr/share/git-core/
 COPY --from=build /usr/libexec/git-core/ /usr/libexec/git-core/
 
-# Copy the app and its dependencies into place
+# Copy the app into place
 COPY --from=build /app/deps /
-
-# Copy the musl dynamic linker (required for dynamically linked binaries like git)
-COPY --from=build /lib/ld-musl-* /lib/
-
 COPY --from=build /app/bin /
 
 COPY --from=build --chown=0:0 /app/www /app/www
