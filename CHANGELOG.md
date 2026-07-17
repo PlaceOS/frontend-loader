@@ -12,6 +12,7 @@
 
 ### Fix
 
+- **app**: add multi-threading support
 - **loader**: [PPT-2301] continuos loading failed repo ([#91](https://github.com/PlaceOS/frontend-loader/pull/91))
 - **loader**: treat root_folder props set to blank as nil ([#89](https://github.com/PlaceOS/frontend-loader/pull/89))
 - use debian as musl libc doesn't work with NFS
