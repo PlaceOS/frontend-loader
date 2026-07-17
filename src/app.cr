@@ -110,7 +110,7 @@ Signal::INT.trap &terminate
 Signal::TERM.trap &terminate
 
 # Asynchronously start the loader
-spawn(same_thread: true) do
+spawn do
   begin
     PlaceOS::FrontendLoader::Loader.instance.start
   rescue error
