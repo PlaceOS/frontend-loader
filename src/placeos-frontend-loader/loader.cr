@@ -152,7 +152,12 @@ module PlaceOS::FrontendLoader
 
       stale_dirs.each { |dir| Log.info { "removing stale temp folder: #{dir}" } }
       stale_dirs.map! { |dir| Path[www_folder, dir].to_s }
-      FileUtils.rm_rf(stale_dirs) unless stale_dirs.empty?
+      stale_dirs.each do |path|
+        FileUtils.rm_r(path)
+      rescue error
+        Log.warn(exception: error) { "failed to cleanup stale folder: #{path}" }
+        FileUtils.rm_r(path) rescue nil
+      end
     end
 
     def process_resource(action : Resource::Action, resource : Model::Repository) : Resource::Result
