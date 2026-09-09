@@ -2,6 +2,7 @@
 
 ### Feat
 
+- **Dockerfile**: use busybox from the image
 - [PPT-2525] Update crystal build for unwind support ([#95](https://github.com/PlaceOS/frontend-loader/pull/95))
 - [PPT-2388] add cron task to prune strayed clone folders ([#94](https://github.com/PlaceOS/frontend-loader/pull/94))
 - **Dockerfile**: switch to static build
