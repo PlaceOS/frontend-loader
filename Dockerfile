@@ -64,16 +64,6 @@ RUN for binary in "/usr/bin/git" /app/bin/* /usr/libexec/git-core/*; do \
 
 RUN git config --system http.sslCAInfo /etc/ssl/certs/ca-certificates.crt
 
-# obtain busy box for file ops in scratch image
-ARG TARGETARCH
-RUN case "${TARGETARCH}" in \
-      amd64) ARCH=x86_64 ;; \
-      arm64) ARCH=armv8l ;; \
-      *) echo "Unsupported arch: ${TARGETARCH}" && exit 1 ;; \
-    esac && \
-    wget -O /busybox https://busybox.net/downloads/binaries/1.31.0-defconfig-multiarch-musl/busybox-${ARCH} && \
-    chmod +x /busybox
-
 # Build a minimal docker image
 FROM scratch
 WORKDIR /app
@@ -86,7 +76,9 @@ COPY --from=build /etc/group /etc/group
 # These are required for communicating with external services
 # COPY --from=build /etc/hosts /etc/hosts
 
-COPY --from=build /busybox /bin/busybox
+# busybox for file ops in the scratch image, taken from the alpine build stage.
+# It is dynamically linked against musl, which is already copied as a git dependency.
+COPY --from=build /bin/busybox /bin/busybox
 SHELL ["/bin/busybox", "sh", "-euo", "pipefail", "-c"]
 
 # These provide certificate chain validation where communicating with external services over TLS
