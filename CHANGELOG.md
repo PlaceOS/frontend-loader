@@ -34,6 +34,7 @@
 
 ### Refactor
 
+- **loader**: [PPT-2388] clean up to not swallow exceptions +  log and retry ([#96](https://github.com/PlaceOS/frontend-loader/pull/96))
 - [PPT-2388] remove stale temp folder(s) on startup ([#93](https://github.com/PlaceOS/frontend-loader/pull/93))
 - **loader**: [PPT-2328] root_path attribute to retrive folder contents ([#92](https://github.com/PlaceOS/frontend-loader/pull/92))
 - PPT-1456 Remove Raven dependency ([#85](https://github.com/PlaceOS/frontend-loader/pull/85))
