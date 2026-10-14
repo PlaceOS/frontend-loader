@@ -48,9 +48,11 @@ RUN mkdir -p /app/www
 RUN mkdir -p /app/tmp
 
 # Build application
+# -Devloop=libevent: the native epoll event loop corrupts its timers under load
+# (crystal-lang/crystal#17058)
 RUN PLACE_COMMIT=$PLACE_COMMIT \
     PLACE_VERSION=$PLACE_VERSION \
-    shards build --production --error-trace --static
+    shards build --production --error-trace --static -Devloop=libevent
 
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
