@@ -49,11 +49,9 @@ RUN mkdir -p /app/tmp
 
 # Build application
 # -no-pie: backtraces of a static PIE binary can't be resolved, they print `from ???`
-# -Devloop=libevent: the native epoll event loop corrupts its timers under load
-# (crystal-lang/crystal#17058)
 RUN PLACE_COMMIT=$PLACE_COMMIT \
     PLACE_VERSION=$PLACE_VERSION \
-    shards build --production --error-trace --static --link-flags=-no-pie -Devloop=libevent
+    shards build --production --error-trace --static --link-flags=-no-pie
 
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
